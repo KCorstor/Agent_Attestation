@@ -6,6 +6,22 @@ from typing import Any
 
 import httpx
 
+from attestation.config import is_demo_mode
+
+
+def _demo_accounts_get_payload() -> dict[str, Any]:
+    """Fake Plaid /accounts/get — used only when DEMO_MODE=1."""
+    return {
+        "accounts": [
+            {"account_id": "acc_demo_checking", "name": "Demo Checking"},
+            {"account_id": "acc_demo_savings", "name": "Demo Savings"},
+        ],
+        "item": {
+            "item_id": "item_demo_001",
+            "institution_id": "ins_demo_bank",
+        },
+    }
+
 
 class PlaidApiError(Exception):
     """Plaid returned a non-success response."""
@@ -31,6 +47,9 @@ async def verify_access_token(
     This does not prove KYC by itself; your product setup (Identity, etc.) does.
     Step 1 uses this as a minimal "bank still linked" check before binding.
     """
+    if is_demo_mode():
+        return _demo_accounts_get_payload()
+
     url = f"{base_url.rstrip('/')}/accounts/get"
     payload = {
         "client_id": client_id,

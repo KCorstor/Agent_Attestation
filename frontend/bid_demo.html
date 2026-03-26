@@ -1,0 +1,350 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Bid Rails — MVP Demo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+    <style>
+      :root {
+        --bg: #0c0f14;
+        --panel: #141a24;
+        --border: #243044;
+        --text: #e8edf5;
+        --muted: #8b98ad;
+        --accent: #5b8cff;
+        --accent2: #3dd6a0;
+        --warn: #f0c674;
+        --danger: #ff6b6b;
+        --radius: 14px;
+        font-family: "DM Sans", system-ui, sans-serif;
+        color-scheme: dark;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: radial-gradient(1200px 600px at 10% -10%, #1a2744 0%, transparent 55%),
+          radial-gradient(900px 500px at 90% 0%, #132a28 0%, transparent 50%), var(--bg);
+        color: var(--text);
+        line-height: 1.5;
+      }
+      header {
+        padding: 28px 24px 8px;
+        max-width: 1100px;
+        margin: 0 auto;
+      }
+      header h1 { font-size: 1.55rem; font-weight: 700; margin: 0 0 8px; letter-spacing: -0.02em; }
+      header p { margin: 0; color: var(--muted); font-size: 0.95rem; max-width: 720px; }
+      nav { margin-top: 14px; }
+      nav a { color: var(--accent); text-decoration: none; font-size: 0.9rem; }
+      nav a:hover { text-decoration: underline; }
+      .layout {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 12px 24px 48px;
+        display: grid;
+        gap: 16px;
+        grid-template-columns: 1fr;
+      }
+      @media (min-width: 920px) {
+        .layout { grid-template-columns: 1fr 1fr; align-items: start; }
+      }
+      .steps {
+        grid-column: 1 / -1;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 10px;
+        margin-bottom: 4px;
+      }
+      .step {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 12px 14px;
+        font-size: 0.8rem;
+        color: var(--muted);
+      }
+      .step strong { display: block; color: var(--text); font-size: 0.85rem; margin-bottom: 4px; }
+      .step.active { border-color: var(--accent); box-shadow: 0 0 0 1px rgba(91, 140, 255, 0.25); }
+      .step.done { border-color: rgba(61, 214, 160, 0.45); }
+      .card {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 18px 20px;
+      }
+      .card h2 { margin: 0 0 12px; font-size: 1.05rem; font-weight: 600; }
+      label { display: block; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin-bottom: 6px; }
+      input, textarea, select {
+        width: 100%;
+        padding: 10px 12px;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        background: #0e131c;
+        color: var(--text);
+        font-size: 0.9rem;
+        font-family: inherit;
+      }
+      textarea { min-height: 100px; font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 0.8rem; }
+      .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; }
+      .col { flex: 1 1 160px; }
+      button {
+        padding: 10px 16px;
+        border-radius: 10px;
+        border: none;
+        background: linear-gradient(135deg, #5b8cff, #4a6fff);
+        color: white;
+        font-weight: 600;
+        cursor: pointer;
+        font-size: 0.88rem;
+      }
+      button.secondary {
+        background: transparent;
+        border: 1px solid var(--border);
+        color: var(--text);
+      }
+      button:disabled { opacity: 0.45; cursor: not-allowed; }
+      .banner-402 {
+        border-left: 4px solid var(--warn);
+        padding: 12px 14px;
+        background: rgba(240, 198, 116, 0.08);
+        border-radius: 0 10px 10px 0;
+        margin-bottom: 12px;
+      }
+      .banner-402 code { color: var(--warn); font-family: "JetBrains Mono", monospace; font-size: 0.85rem; }
+      pre {
+        margin: 0;
+        padding: 14px;
+        background: #080b10;
+        border-radius: 12px;
+        overflow: auto;
+        font-family: "JetBrains Mono", monospace;
+        font-size: 0.72rem;
+        line-height: 1.45;
+        border: 1px solid #1c2433;
+        max-height: 280px;
+      }
+      .bid {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 12px 14px;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        margin-bottom: 10px;
+        background: #0e131c;
+      }
+      .bid .fee { font-size: 1.25rem; font-weight: 700; color: var(--accent2); }
+      .pill { font-size: 0.7rem; padding: 2px 8px; border-radius: 999px; background: #1c2a3d; color: var(--muted); }
+      .status { font-size: 0.85rem; margin-top: 8px; color: var(--muted); }
+      .status.ok { color: var(--accent2); }
+      .status.err { color: var(--danger); }
+      .small { font-size: 0.8rem; color: var(--muted); }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Bid rails (MVP)</h1>
+      <p>
+        Simulated flow: <strong>HTTP 402</strong> → package <strong>agent trust + transaction</strong> →
+        <strong>mock issuer bids</strong>. Attestation credentials from <code>/agent_attestation/issue</code> paste in below.
+      </p>
+      <nav><a href="/demo/story">Full demo (fake data)</a> · <a href="/">← Attestation lab</a></nav>
+    </header>
+
+    <div class="layout">
+      <div class="steps" id="steps">
+        <div class="step active" data-step="1"><strong>1 · 402</strong>Payment required</div>
+        <div class="step" data-step="2"><strong>2 · Trust</strong>Credential + signals</div>
+        <div class="step" data-step="3"><strong>3 · RFP</strong>Build package</div>
+        <div class="step" data-step="4"><strong>4 · Bids</strong>Issuers respond</div>
+      </div>
+
+      <div class="card">
+        <h2>Simulate 402</h2>
+        <div class="banner-402">
+          Pretend an API returned <code>402 Payment Required</code> for a protected resource.
+          Your orchestrator runs <em>before</em> a generic facilitator claims routing.
+        </div>
+        <div class="row">
+          <div class="col">
+            <label>Resource URL (402)</label>
+            <input id="resourceUrl" value="https://api.example.com/paywall/resource/abc" />
+          </div>
+          <div class="col">
+            <label>Amount (USD, cents)</label>
+            <input id="amountCents" type="number" value="5000" min="1" />
+          </div>
+        </div>
+        <div class="row" style="margin-top: 10px">
+          <div class="col">
+            <label>MCC</label>
+            <input id="mcc" placeholder="5411" />
+          </div>
+          <div class="col">
+            <label>Description</label>
+            <input id="desc" value="Agent checkout — groceries" />
+          </div>
+        </div>
+        <p class="status" id="s402">Step 1 — define the blocked request.</p>
+      </div>
+
+      <div class="card">
+        <h2>Trust bundle</h2>
+        <div class="row">
+          <div class="col">
+            <label>Wallet (optional echo)</label>
+            <input id="wallet" placeholder="0x…" />
+          </div>
+          <div class="col">
+            <label>Credit score band (demo)</label>
+            <select id="creditBand">
+              <option value="">—</option>
+              <option value="580-619">580–619</option>
+              <option value="620-679">620–679</option>
+              <option value="680-719">680–719</option>
+              <option value="720-850" selected>720–850</option>
+            </select>
+          </div>
+        </div>
+        <label style="margin-top: 12px">Issued credential JSON (paste from attestation issue)</label>
+        <textarea id="credentialJson" placeholder='{ "credential": { ... } } or full response JSON'></textarea>
+        <p class="small" style="color: var(--muted); font-size: 0.8rem; margin: 8px 0 0">
+          Parsing: accepts either <code>{ "credential": {...} }</code> or the inner credential object.
+        </p>
+        <p class="status" id="sTrust">Step 2 — attach what an issuer would underwrite on.</p>
+      </div>
+
+      <div class="card" style="grid-column: 1 / -1">
+        <h2>Build RFP &amp; show mock bids</h2>
+        <div class="row">
+          <div class="col">
+            <label>Max fee (bps, optional)</label>
+            <input id="maxFee" type="number" placeholder="50" />
+          </div>
+          <div class="col" style="flex: 2">
+            <label>&nbsp;</label>
+            <button id="btnRfp" type="button">POST /demo/bid-rails/rfp</button>
+          </div>
+        </div>
+        <p class="status" id="sRfp"></p>
+        <div class="row" style="margin-top: 14px; align-items: stretch">
+          <div class="col" style="flex: 1 1 45%">
+            <label>Package</label>
+            <pre id="pkgOut">{}</pre>
+          </div>
+          <div class="col" style="flex: 1 1 45%">
+            <label>Mock issuer bids</label>
+            <div id="bidsOut"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const $ = (id) => document.getElementById(id);
+      const steps = () => [...document.querySelectorAll(".step")];
+
+      function setStep(n, kind) {
+        steps().forEach((el) => {
+          const sn = +el.dataset.step;
+          el.classList.remove("active", "done");
+          if (sn < n) el.classList.add("done");
+          if (sn === n) el.classList.add(kind === "active" ? "active" : "done");
+        });
+      }
+
+      function parseCredential() {
+        const raw = $("credentialJson").value.trim();
+        if (!raw) return { credential: null };
+        const j = JSON.parse(raw);
+        if (j.credential) return { credential: j.credential };
+        if (j.walletAddress && j.proof) return { credential: j };
+        return { credential: j };
+      }
+
+      $("btnRfp").onclick = async () => {
+        $("sRfp").textContent = "Working…";
+        $("sRfp").className = "status";
+        setStep(3, "active");
+        let credWrap;
+        try {
+          credWrap = parseCredential();
+        } catch (e) {
+          $("sRfp").textContent = "Invalid credential JSON: " + e.message;
+          $("sRfp").className = "status err";
+          return;
+        }
+
+        const body = {
+          resource_url: $("resourceUrl").value.trim(),
+          transaction: {
+            amount_cents: parseInt($("amountCents").value, 10),
+            currency: "USD",
+            mcc: $("mcc").value.trim() || null,
+            description: $("desc").value.trim() || null,
+            idempotency_key: "demo-" + Date.now(),
+          },
+          wallet_address: $("wallet").value.trim() || null,
+          credit_score_band: $("creditBand").value || null,
+          credential: credWrap.credential,
+          include_full_credential: !!credWrap.credential,
+          max_fee_bps: $("maxFee").value ? parseInt($("maxFee").value, 10) : null,
+          protocol_hints: ["before_mpp_facilitator", "x402"],
+        };
+
+        try {
+          const res = await fetch("/demo/bid-rails/rfp", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.detail || res.statusText);
+          $("pkgOut").textContent = JSON.stringify(data.package, null, 2);
+          const box = $("bidsOut");
+          box.innerHTML = "";
+          (data.bids || []).forEach((b) => {
+            const el = document.createElement("div");
+            el.className = "bid";
+            el.innerHTML = `
+              <div>
+                <div style="font-weight:600">${b.issuer_label}</div>
+                <div class="pill">${b.issuer_id}</div>
+                <div style="font-size:0.8rem;color:var(--muted);margin-top:6px">${b.note}</div>
+              </div>
+              <div style="text-align:right">
+                <div class="fee">${b.fee_bps} bps</div>
+                <div style="font-size:0.8rem;color:var(--muted)">~${b.estimated_settlement_ms} ms</div>
+                <div style="font-size:0.75rem;color:var(--muted)">score ${b.score.toFixed(2)}</div>
+              </div>`;
+            box.appendChild(el);
+          });
+          $("sRfp").textContent = "RFP " + data.rfp_id + " — mock bids generated (demo only).";
+          $("sRfp").className = "status ok";
+          setStep(4, "active");
+          setStep(3, "done");
+        } catch (e) {
+          $("sRfp").textContent = e.message;
+          $("sRfp").className = "status err";
+        }
+      };
+
+      ["resourceUrl", "amountCents"].forEach((id) => {
+        $(id).addEventListener("change", () => {
+          setStep(1, "active");
+          $("s402").textContent = "Step 1 — blocked request defined.";
+          $("s402").className = "status ok";
+        });
+      });
+      $("credentialJson").addEventListener("change", () => {
+        setStep(2, "active");
+        $("sTrust").textContent = "Step 2 — trust bundle updated.";
+        $("sTrust").className = "status ok";
+      });
+    </script>
+  </body>
+</html>

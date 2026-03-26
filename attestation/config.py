@@ -13,7 +13,18 @@ class PlaidSettings:
     base_url: str
 
 
+def is_demo_mode() -> bool:
+    return os.environ.get("DEMO_MODE", "").strip().lower() in ("1", "true", "yes")
+
+
 def load_plaid_settings() -> PlaidSettings:
+    if is_demo_mode():
+        return PlaidSettings(
+            client_id="demo",
+            secret="demo",
+            base_url="https://sandbox.plaid.com",
+        )
+
     client_id = os.environ.get("PLAID_CLIENT_ID", "").strip()
     secret = os.environ.get("PLAID_SECRET", "").strip()
     env = os.environ.get("PLAID_ENV", "sandbox").strip().lower()

@@ -20,6 +20,9 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
 
 from attestation.schemas import (
+    BidRecord,
+    BidRfpRequest,
+    BidRfpResponse,
     ChallengeResponse,
     CreateAttestationRequest,
     CreateAttestationResponse,
@@ -36,6 +39,8 @@ from attestation.step3_create import create_attestation_request
 from attestation.issue_credential import CredentialIssuer
 from attestation.did import build_did_document
 from attestation.dev_plaid_sandbox import create_sandbox_access_token
+from attestation.demo_bids import store as bid_demo_store
+from attestation.demo_full_flow import run_full_demo
 
 app = FastAPI(title="Agent Attestation", version="0.1.0")
 
@@ -111,6 +116,45 @@ def did_document() -> dict:
 def dev_ui() -> FileResponse:
     """Serve a tiny local UI for testing Steps 1–4."""
     return FileResponse("frontend/index.html")
+
+
+@app.get("/demo/bid-rails")
+def bid_rails_demo() -> FileResponse:
+    """MVP: 402 → RFP package → mock issuer bids."""
+    return FileResponse("frontend/bid_demo.html")
+
+
+@app.get("/demo/full-flow")
+async def demo_full_flow() -> dict:
+    """
+    End-to-end demo with **fake** Plaid + wallet (DEMO_MODE).
+    No credentials or MetaMask required.
+    """
+    return await run_full_demo(issuer=issuer)
+
+
+@app.get("/demo/story")
+def demo_story_page() -> FileResponse:
+    """Visual step-by-step UI for the full demo."""
+    return FileResponse("frontend/demo_all.html")
+
+
+@app.post("/demo/bid-rails/rfp", response_model=BidRfpResponse)
+def demo_create_rfp(body: BidRfpRequest) -> BidRfpResponse:
+    """Build a broadcastable RFP and return mock bids (demo only)."""
+    rec = bid_demo_store.create_rfp(body.model_dump(mode="json"))
+    bids = [
+        BidRecord(
+            issuer_id=b.issuer_id,
+            issuer_label=b.issuer_label,
+            fee_bps=b.fee_bps,
+            estimated_settlement_ms=b.estimated_settlement_ms,
+            score=b.score,
+            note=b.note,
+        )
+        for b in rec.bids
+    ]
+    return BidRfpResponse(rfp_id=rec.rfp_id, package=rec.package, bids=bids)
 
 
 @app.post("/dev/plaid/sandbox/token", response_model=DevSandboxTokenResponse)

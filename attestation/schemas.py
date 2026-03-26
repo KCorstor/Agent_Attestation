@@ -150,3 +150,47 @@ class DevSandboxTokenResponse(BaseModel):
     access_token: str
     public_token: str
     item_id: str | None = None
+
+
+class TransactionIntent(BaseModel):
+    """Proposed payment the issuer may bid to process (demo)."""
+
+    amount_cents: int = Field(..., ge=1)
+    currency: str = Field(default="USD", min_length=3, max_length=8)
+    merchant_id: str | None = None
+    mcc: str | None = Field(default=None, description="Merchant category code")
+    description: str | None = None
+    idempotency_key: str | None = None
+
+
+class BidRfpRequest(BaseModel):
+    """Build a broadcastable RFP package (demo — not a real issuer auction)."""
+
+    resource_url: str | None = Field(default=None, description="URL that returned HTTP 402.")
+    transaction: TransactionIntent
+    wallet_address: str | None = None
+    agent_id: str | None = None
+    credential: dict | None = Field(default=None, description="Issued credential JSON from /agent_attestation/issue.")
+    include_full_credential: bool = False
+    credit_score_band: str | None = None
+    attestation_claims: dict | None = None
+    underwriting_notes: str | None = None
+    max_fee_bps: int | None = Field(default=None, ge=0, le=10_000)
+    preferred_rails: list[str] = Field(default_factory=list)
+    protocol_hints: list[str] = Field(default_factory=lambda: ["before_mpp_facilitator"])
+    expires_at: str | None = Field(default=None, description="ISO8601 RFP expiry.")
+
+
+class BidRecord(BaseModel):
+    issuer_id: str
+    issuer_label: str
+    fee_bps: int
+    estimated_settlement_ms: int
+    score: float
+    note: str
+
+
+class BidRfpResponse(BaseModel):
+    rfp_id: str
+    package: dict
+    bids: list[BidRecord]

@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Full demo — fake data</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet" />
+    <style>
+      :root {
+        --bg: #0a0c10;
+        --card: #12161e;
+        --line: #2a3344;
+        --text: #eef1f7;
+        --muted: #8f9bb3;
+        --accent: #6c9eff;
+        --ok: #3dd6a0;
+        font-family: "DM Sans", system-ui, sans-serif;
+        color-scheme: dark;
+      }
+      body { margin: 0; background: var(--bg); color: var(--text); min-height: 100vh; }
+      header {
+        padding: 28px 20px 8px;
+        max-width: 900px;
+        margin: 0 auto;
+      }
+      header h1 { font-size: 1.4rem; margin: 0 0 8px; }
+      header p { margin: 0; color: var(--muted); font-size: 0.95rem; max-width: 640px; }
+      nav { margin-top: 12px; font-size: 0.9rem; }
+      nav a { color: var(--accent); text-decoration: none; }
+      .wrap { max-width: 900px; margin: 0 auto; padding: 8px 20px 48px; }
+      .banner {
+        background: linear-gradient(90deg, rgba(108, 158, 255, 0.12), transparent);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 14px 16px;
+        margin-bottom: 20px;
+        font-size: 0.9rem;
+      }
+      .banner code { font-family: "JetBrains Mono", monospace; font-size: 0.82rem; color: var(--ok); }
+      button {
+        background: var(--accent);
+        color: #0a0c10;
+        border: none;
+        padding: 10px 18px;
+        border-radius: 10px;
+        font-weight: 600;
+        cursor: pointer;
+        font-size: 0.9rem;
+      }
+      button:disabled { opacity: 0.5; cursor: wait; }
+      .timeline { position: relative; padding-left: 0; }
+      .step {
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        margin-bottom: 14px;
+        overflow: hidden;
+        background: var(--card);
+      }
+      .step-h {
+        padding: 14px 16px;
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+      }
+      .step-h:hover { background: rgba(255, 255, 255, 0.03); }
+      .step-h strong { font-size: 0.95rem; }
+      .step-h span { font-size: 0.8rem; color: var(--muted); flex: 1; }
+      .badge { font-size: 0.7rem; padding: 3px 8px; border-radius: 999px; background: #1e2636; color: var(--muted); }
+      .step-b { display: none; border-top: 1px solid var(--line); padding: 12px 16px 16px; }
+      .step.open .step-b { display: block; }
+      pre {
+        margin: 8px 0 0;
+        padding: 12px;
+        background: #07090d;
+        border-radius: 10px;
+        font-family: "JetBrains Mono", monospace;
+        font-size: 0.68rem;
+        line-height: 1.45;
+        overflow: auto;
+        max-height: 220px;
+      }
+      .err { color: #ff7a7a; font-size: 0.9rem; margin-top: 12px; }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Full flow demo (fake everything)</h1>
+      <p>
+        Runs Steps 1→5 on the server with <strong>DEMO_MODE</strong>: fake Plaid, fake token
+        <code>access-demo-fake</code>, a demo wallet signature, real Ed25519 issuance, then mock issuer bids.
+      </p>
+      <nav><a href="/">Attestation lab</a> · <a href="/demo/bid-rails">Bid rails only</a></nav>
+    </header>
+    <div class="wrap">
+      <div class="banner">
+        No <code>PLAID_*</code> keys or MetaMask needed. Click <strong>Run demo</strong> to load the story.
+      </div>
+      <button id="run" type="button">Run demo</button>
+      <p id="err" class="err" style="display: none"></p>
+      <div id="tl" class="timeline" style="margin-top: 20px"></div>
+    </div>
+    <script>
+      const $ = (id) => document.getElementById(id);
+      $("run").onclick = async () => {
+        $("err").style.display = "none";
+        $("run").disabled = true;
+        $("tl").innerHTML = "";
+        try {
+          const res = await fetch("/demo/full-flow");
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.detail || res.statusText);
+          data.steps.forEach((s, i) => {
+            const el = document.createElement("div");
+            el.className = "step";
+            el.innerHTML = `
+              <div class="step-h">
+                <strong>${i + 1}. ${s.title}</strong>
+                <span>${s.description || ""}</span>
+                <span class="badge">${s.id}</span>
+              </div>
+              <div class="step-b">
+                <div style="font-size:0.75rem;color:var(--muted);margin-bottom:6px">Request</div>
+                <pre>${JSON.stringify(s.request, null, 2)}</pre>
+                <div style="font-size:0.75rem;color:var(--muted);margin:10px 0 6px">Response</div>
+                <pre>${JSON.stringify(s.response, null, 2)}</pre>
+              </div>`;
+            el.querySelector(".step-h").onclick = () => el.classList.toggle("open");
+            $("tl").appendChild(el);
+          });
+        } catch (e) {
+          $("err").textContent = e.message;
+          $("err").style.display = "block";
+        } finally {
+          $("run").disabled = false;
+        }
+      };
+    </script>
+  </body>
+</html>
