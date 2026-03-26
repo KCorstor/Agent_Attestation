@@ -29,6 +29,11 @@ class AttestationSession:
     challenge_nonce: str | None = None
     challenge_message: str | None = None
     challenge_timestamp: datetime | None = None
+    # Step 3: user-provided signature over the challenge message
+    challenge_signature: str | None = None
+    signature_submitted_at: datetime | None = None
+    signature_verified: bool | None = None
+    signature_recovered_address: str | None = None
 
 
 class SessionStore:

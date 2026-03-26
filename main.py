@@ -17,12 +17,30 @@ except ImportError:
     pass
 
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import FileResponse
 
-from attestation.schemas import ChallengeResponse, InitAttestationRequest, InitAttestationResponse
+from attestation.schemas import (
+    ChallengeResponse,
+    CreateAttestationRequest,
+    CreateAttestationResponse,
+    DevSandboxTokenRequest,
+    DevSandboxTokenResponse,
+    InitAttestationRequest,
+    InitAttestationResponse,
+    IssueAttestationRequest,
+    IssueAttestationResponse,
+)
 from attestation.step1 import initiate_attestation
 from attestation.step2 import get_or_create_challenge
+from attestation.step3_create import create_attestation_request
+from attestation.issue_credential import CredentialIssuer
+from attestation.did import build_did_document
+from attestation.dev_plaid_sandbox import create_sandbox_access_token
 
 app = FastAPI(title="Agent Attestation", version="0.1.0")
+
+# Single issuer instance (key generated/loaded once at startup).
+issuer = CredentialIssuer()
 
 
 @app.post("/attestation/init", response_model=InitAttestationResponse)
@@ -55,3 +73,57 @@ def attestation_challenge(session_id: str) -> ChallengeResponse:
         return get_or_create_challenge(session_id)
     except LookupError as e:
         raise HTTPException(status_code=404, detail=str(e)) from e
+
+
+@app.post("/agent_attestation/create", response_model=CreateAttestationResponse)
+async def agent_attestation_create(body: CreateAttestationRequest) -> CreateAttestationResponse:
+    """
+    Step 3: developer sends Plaid token + wallet signature to *this* attestation service.
+    """
+    try:
+        return await create_attestation_request(body)
+    except RuntimeError as e:
+        raise HTTPException(status_code=503, detail=str(e)) from e
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+
+
+@app.post("/agent_attestation/issue", response_model=IssueAttestationResponse)
+async def agent_attestation_issue(body: IssueAttestationRequest) -> IssueAttestationResponse:
+    """
+    Step 4: Issue a signed credential after verifying Plaid token + wallet signature.
+    """
+    try:
+        return await issuer.issue(body)
+    except RuntimeError as e:
+        raise HTTPException(status_code=503, detail=str(e)) from e
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+
+
+@app.get("/.well-known/did.json")
+def did_document() -> dict:
+    """Public key for verifiers (did:web document)."""
+    return build_did_document(issuer.public_key_raw())
+
+
+@app.get("/")
+def dev_ui() -> FileResponse:
+    """Serve a tiny local UI for testing Steps 1–4."""
+    return FileResponse("frontend/index.html")
+
+
+@app.post("/dev/plaid/sandbox/token", response_model=DevSandboxTokenResponse)
+async def dev_create_sandbox_token(body: DevSandboxTokenRequest) -> DevSandboxTokenResponse:
+    """
+    Dev-only helper: mint a Plaid Sandbox access_token for local testing.
+    Requires PLAID_ENV=sandbox and valid API keys.
+    """
+    try:
+        out = await create_sandbox_access_token(
+            institution_id=body.institution_id,
+            initial_products=body.initial_products,
+        )
+        return DevSandboxTokenResponse(**out)
+    except (RuntimeError, ValueError) as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e

@@ -1,4 +1,4 @@
-"""Pydantic schemas for Step 1 API."""
+"""Pydantic schemas for steps 1–3."""
 
 from __future__ import annotations
 
@@ -59,3 +59,94 @@ class ChallengeResponse(BaseModel):
         ),
         description="Implementation hint for integrators (not part of the signed bytes).",
     )
+
+
+_EVM_SIG_0X = re.compile(r"^0x[a-fA-F0-9]{130}$")
+_EVM_SIG_NO0X = re.compile(r"^[a-fA-F0-9]{130}$")
+
+
+class CreateAttestationRequest(BaseModel):
+    """
+    Step 3: developer sends everything to the *attestation service we are building*.
+
+    This replaces the earlier assumption that Plaid would expose an attestation endpoint.
+    """
+
+    access_token: str = Field(..., min_length=1, description="Plaid access_token proving bank connection.")
+    wallet_address: str
+    message: str = Field(..., min_length=1, description="Exact challenge string the wallet signed.")
+    signature: str = Field(..., description="65-byte EVM signature hex (0x prefix optional).")
+
+    @field_validator("wallet_address")
+    @classmethod
+    def wallet_ok2(cls, v: str) -> str:
+        if not _WALLET.match(v):
+            raise ValueError("wallet_address must be 0x followed by 40 hex characters")
+        return v
+
+    @field_validator("signature")
+    @classmethod
+    def sig_ok(cls, v: str) -> str:
+        raw = v.strip()
+        if _EVM_SIG_0X.match(raw):
+            return raw
+        if _EVM_SIG_NO0X.match(raw):
+            return "0x" + raw
+        raise ValueError("signature must be 65 bytes hex (130 chars), with optional 0x prefix")
+
+
+class CreateAttestationResponse(BaseModel):
+    status: str = "attestation_request_verified"
+    wallet_address: str
+    verified_wallet_signature: bool
+    recovered_address: str
+    plaid_item_id: str | None = None
+    plaid_institution_id: str | None = None
+    account_count: int | None = None
+
+
+class IssueAttestationRequest(BaseModel):
+    """
+    Step 4: after Step 3 verification, issue a signed credential.
+
+    For now we only support a fixed claims set (mock tiers) because real income/identity
+    products require additional Plaid endpoints and permissions beyond /accounts/get.
+    """
+
+    access_token: str = Field(..., min_length=1)
+    wallet_address: str
+    message: str = Field(..., min_length=1)
+    signature: str
+    expires_at: datetime = Field(..., description="Credential expiry (ISO8601).")
+
+    @field_validator("wallet_address")
+    @classmethod
+    def wallet_ok3(cls, v: str) -> str:
+        if not _WALLET.match(v):
+            raise ValueError("wallet_address must be 0x followed by 40 hex characters")
+        return v
+
+    @field_validator("signature")
+    @classmethod
+    def sig_ok2(cls, v: str) -> str:
+        raw = v.strip()
+        if _EVM_SIG_0X.match(raw):
+            return raw
+        if _EVM_SIG_NO0X.match(raw):
+            return "0x" + raw
+        raise ValueError("signature must be 65 bytes hex (130 chars), with optional 0x prefix")
+
+
+class IssueAttestationResponse(BaseModel):
+    credential: dict
+
+
+class DevSandboxTokenRequest(BaseModel):
+    institution_id: str = Field(..., min_length=1)
+    initial_products: list[str] = Field(default_factory=lambda: ["transactions"])
+
+
+class DevSandboxTokenResponse(BaseModel):
+    access_token: str
+    public_token: str
+    item_id: str | None = None
