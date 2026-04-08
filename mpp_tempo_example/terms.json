@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-04-08T12:00:00.000Z",
+  "purpose": "mpp_payment_required_bundle_for_downstream_auction",
+  "challenge": {
+    "id": "example-challenge-id",
+    "method": "tempo",
+    "intent": "charge",
+    "realm": "127.0.0.1",
+    "request": {
+      "amount": "100000",
+      "currency": "0x20c0000000000000000000000000000000000000",
+      "recipient": "0x0000000000000000000000000000000000000000",
+      "methodDetails": { "chainId": 42431 }
+    }
+  },
+  "mockAuction": {
+    "auctionId": "mock-auction-example",
+    "status": "cleared_for_issuance",
+    "settledAt": "2026-04-08T12:00:00.000Z",
+    "note": "Replace with real auction result payload when wired up."
+  },
+  "mockBank": {
+    "issuerId": "mock-bank-moderato-demo",
+    "issuerName": "Mock Issuer (replace with your bank)",
+    "programId": "mock-pathusd-program",
+    "issuingTerms": {
+      "asset": "pathUSD",
+      "network": "Tempo Moderato (testnet)",
+      "maxAmountMinorUnits": "100000",
+      "currencyContract": "0x20c0000000000000000000000000000000000000",
+      "validHours": 24,
+      "aprPercent": "0.00"
+    },
+    "attestation": {
+      "format": "mock-jwt-placeholder",
+      "token": "eyJhbGciOiJub25lIn0.eyJtb2NrIjp0cnVlfQ."
+    }
+  },
+  "integration": {
+    "mppChallengeId": "example-challenge-id",
+    "nextStep": "Agent proceeds to Tempo payment after this file is accepted."
+  }
+}

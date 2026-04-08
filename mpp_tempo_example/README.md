@@ -11,7 +11,7 @@ The agent matches that: **`tempo.charge({ account })`**, not the full client **`
 ## Prerequisites
 
 - **Node.js 22+** (recommended; `mppx` may warn on older Node)
-- **`mpp_tempo_example/.env`** with at least **`MPP_SECRET_KEY`**, **`TEMPO_PRIVATE_KEY`**, and **`TEMPO_RECIPIENT_ADDRESS`** (see `.env.example`). The payer wallet should hold testnet **pathUSD** on **Moderato**.
+- **`mpp_tempo_example/.env`** with at least **`MPP_SECRET_KEY`**, **`TEMPO_PRIVATE_KEY`**, **`TEMPO_RECIPIENT_ADDRESS`**, and **`MPP_AUCTION_TERMS_FILE`** (see **`.env.example`**). The payer wallet should hold testnet **pathUSD** on **Moderato**.
 - Nothing from Stripe
 
 ## Setup and run
@@ -31,13 +31,13 @@ npm start
 
 Default: `http://127.0.0.1:4243`
 
-**Terminal 2 — agent**
+**Terminal 2 — agent** (needs **`MPP_AUCTION_TERMS_FILE`** in **`.env`**; see below)
 
 ```bash
 npm run agent
 ```
 
-The agent calls **`mppx.fetch`** on **`GET /paid`**; **`mppx`** handles **402 → pay → retry**.
+The agent calls **`mppx.fetch`** on **`GET /paid`**. After **402**, it **waits** until the terms JSON file exists, then **`mppx`** pays and retries.
 
 ### 402 intercept → bundle (auction prep)
 
@@ -57,24 +57,28 @@ Replay mock issuer on a saved file:
 node mock_auction_issuer.mjs ./last-bundle.json
 ```
 
-### Pause until auction “winner” terms (overlay)
+### Auction terms file (required before payment)
 
-**`auction_gate.mjs`** is the reusable piece: it supplies **`fetch`** + **`onChallenge`** so the wallet does not sign until **`waitForTerms(bundle)`** resolves.
+**`MPP_AUCTION_TERMS_FILE`** must point to a path where **valid JSON** will appear. The agent **never** signs until that file can be read and **`defaultAcceptTerms()`** says the deal may proceed (see **`auction_gate.mjs`**).
 
-- **No env:** same as before — no extra wait after **402**.
-- **Set `MPP_AUCTION_TERMS_FILE=./terms.json`:** the agent **polls** until that path exists with **valid JSON** (your auction or mock process writes it). Then **`onTerms`** runs and payment continues.
+- **Time-based pings:** while waiting, the agent logs **`[auction ping …]`** at most every **`MPP_AUCTION_PING_INTERVAL_MS`** (default **2000**). Set **`MPP_AUCTION_QUIET=1`** to silence pings.
+- **Continue vs wait vs abort:** parsed JSON is checked each poll. If **`mockAuction.status`** is **`pending`**, the agent keeps waiting. If **`rejected`** or **`proceed: false`**, it **aborts** (throws). If **`cleared_for_issuance`** (or no mock blockers), it **pays**.
+
+Example shape (also committed as **`examples/terms.json`** — copy to your **`./terms.json`** path if you want a static sample; **`npm run auction:release`** normally generates it from the real bundle):
+
+`mpp_tempo_example/examples/terms.json`
 
 Two-terminal demo (same `.env` keys):
 
 ```bash
-# Terminal A — blocks after writing bundle if MPP_BUNDLE_OUT is set
+# Terminal A — blocks after 402 until terms file exists (set paths in .env or here)
 MPP_BUNDLE_OUT=./bundle.json MPP_AUCTION_TERMS_FILE=./terms.json npm run agent
 
 # Terminal B — writes mock winner JSON to the path the agent waits on
 MPP_BUNDLE_OUT=./bundle.json MPP_AUCTION_TERMS_FILE=./terms.json npm run auction:release
 ```
 
-**Other agents:** copy **`createAuctionGate`** + **`waitForTermsFromEnv`**, or pass your own **`waitForTerms: async (bundle) => { ... }`** (HTTP callback, queue, etc.). If the agent already has **`onChallenge`**, wrap with **`chainOnChallenge(gate.onChallenge, yourHandler)`** — keep **`gate.onChallenge` first so the pause runs before your logic.
+**Other agents:** use **`createAuctionGate`** with your own **`waitForTerms`** (HTTP, queue, etc.), or **`waitForTermsFromEnv()`** if you want the wait to be optional. If the agent already has **`onChallenge`**, use **`chainOnChallenge(gate.onChallenge, yourHandler)`** — keep **`gate.onChallenge` first.
 
 ## Quick test (402 only)
 

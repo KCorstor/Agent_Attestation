@@ -4,8 +4,8 @@
  * 402 intercept: when the merchant returns HTTP 402, `onChallenge` runs before the
  * wallet signs. We snapshot the Payment challenge + headers into a bundle.
  *
- * Optional pause: set MPP_AUCTION_TERMS_FILE — the agent blocks until that file exists
- * with JSON (e.g. npm run auction:release). See auction_gate.mjs (reusable overlay).
+ * Required: MPP_AUCTION_TERMS_FILE — the agent never pays until that path contains JSON
+ * (e.g. npm run auction:release). See auction_gate.mjs.
  *
  * Prerequisites:
  *   1. Server running: npm start (same repo folder)
@@ -30,9 +30,12 @@ import { Mppx, tempo } from "mppx/client";
 // Writes the JSON “payment bundle” to disk when `MPP_BUNDLE_OUT` is set.
 import { writeBundleFile } from "./payment_bundle.mjs";
 
-// `createAuctionGate` builds `fetch` + `onChallenge` that can wait for auction terms.
-// `waitForTermsFromEnv` returns a waiter function if `MPP_AUCTION_TERMS_FILE` is set.
-import { createAuctionGate, waitForTermsFromEnv } from "./auction_gate.mjs";
+// `createAuctionGate` builds `fetch` + `onChallenge`; `waitForTermsFile` polls until JSON exists.
+import {
+  createAuctionGate,
+  defaultAcceptTerms,
+  waitForTermsFile,
+} from "./auction_gate.mjs";
 
 // Secret key for the wallet that will pay (string from `.env`, may be empty).
 const keyRaw = process.env.TEMPO_PRIVATE_KEY?.trim();
@@ -43,7 +46,7 @@ const paidUrl = (process.env.MPP_PAID_URL || "http://127.0.0.1:4243/paid").trim(
 // If set, path to a JSON file where we save the bundle right after a 402.
 const bundleOut = process.env.MPP_BUNDLE_OUT?.trim();
 
-// If set, path to a JSON file we poll until it exists — that unblocks payment (auction pause).
+// Required: path to JSON terms; the agent blocks after 402 until this file is readable (never skips).
 const termsFile = process.env.MPP_AUCTION_TERMS_FILE?.trim();
 
 // Cannot pay without a private key; exit early with a helpful message.
@@ -53,16 +56,31 @@ if (!keyRaw) {
   process.exit(1);
 }
 
+if (!termsFile) {
+  console.error("Set MPP_AUCTION_TERMS_FILE in .env (path to JSON terms the agent must wait for).");
+  console.error("Example: MPP_AUCTION_TERMS_FILE=./terms.json then run npm run auction:release in another terminal.");
+  process.exit(1);
+}
+
 // viem expects `0x` prefix; add it if the user pasted hex without it.
 const pk = keyRaw.startsWith("0x") ? keyRaw : `0x${keyRaw}`;
 
 // Account object used by `tempo.charge` to sign the Tempo payment.
 const account = privateKeyToAccount(pk);
 
-// One object that knows how to wrap `fetch` and handle 402 with optional “wait for terms”.
+// One object that wraps `fetch` and always waits for terms JSON before allowing payment.
 const gate = createAuctionGate({
-  // If env points to a terms file, this waits until that file has valid JSON; else `undefined` = no wait.
-  waitForTerms: waitForTermsFromEnv(),
+  // Blocks until `termsFile` has JSON that `defaultAcceptTerms` accepts (not pending/rejected).
+  // Pings on a timer while waiting; see MPP_AUCTION_PING_INTERVAL_MS / MPP_AUCTION_QUIET.
+  waitForTerms: () =>
+    waitForTermsFile(termsFile, {
+      acceptTerms: defaultAcceptTerms,
+      onPing: ({ elapsedMs, phase, detail }) => {
+        if (process.env.MPP_AUCTION_QUIET === "1") return;
+        const s = (elapsedMs / 1000).toFixed(1);
+        console.log(`[auction ping ${s}s] ${phase}${detail ? ` — ${detail}` : ""}`);
+      },
+    }),
 
   // Runs once we have a 402 and a parsed bundle (before waiting / paying).
   onBundle: async (bundle) => {
@@ -76,13 +94,10 @@ const gate = createAuctionGate({
       console.log(`\nWrote bundle to ${bundleOut}`);
     }
 
-    // Hint when we’re about to block on the terms file.
-    if (termsFile) {
-      console.log(
-        `\nWaiting for auction terms (poll ${process.env.MPP_AUCTION_POLL_MS || "500"}ms): ${termsFile}`,
-      );
-      console.log("Release with: npm run auction:release   (after MPP_BUNDLE_OUT is set or pass bundle path)\n");
-    }
+    console.log(
+      `\nWaiting for auction terms (poll ${process.env.MPP_AUCTION_POLL_MS || "500"}ms): ${termsFile}`,
+    );
+    console.log("Release with: npm run auction:release   (set MPP_BUNDLE_OUT or pass bundle path to that script)\n");
   },
 
   // Runs only after terms were read (file appeared); then mppx will proceed to sign and pay.
@@ -100,7 +115,7 @@ const mppx = Mppx.create({
   fetch: gate.fetch,
   // `tempo.charge` only — not `tempo()`, which also adds `session` (see README.md).
   methods: [tempo.charge({ account })],
-  // Called on 402: implemented by the gate (bundle → optional wait → then pay).
+  // Called on 402: implemented by the gate (bundle → wait for terms file → then pay).
   onChallenge: gate.onChallenge,
 });
 
@@ -110,7 +125,7 @@ async function main() {
   console.log("  payer:", account.address);
   console.log("  url:  ", paidUrl);
   if (bundleOut) console.log("  bundle out:", bundleOut);
-  if (termsFile) console.log("  auction terms file (wait):", termsFile);
+  console.log("  auction terms file (required wait):", termsFile);
   console.log("");
 
   // This may do: GET → 402 → onChallenge (bundle/wait) → pay → GET again with Authorization.

@@ -1,0 +1,68 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-04-08T22:27:11.083Z",
+  "purpose": "mpp_payment_required_bundle_for_downstream_auction",
+  "request": {
+    "url": "http://127.0.0.1:4243/paid",
+    "method": "GET"
+  },
+  "http402": {
+    "status": 402,
+    "headers": {
+      "cache-control": "no-store",
+      "connection": "keep-alive",
+      "content-length": "233",
+      "content-type": "application/problem+json; charset=utf-8",
+      "date": "Wed, 08 Apr 2026 22:27:11 GMT",
+      "etag": "W/\"e9-fsyThKBylpv318OYDvVivJqACYA\"",
+      "keep-alive": "timeout=5",
+      "www-authenticate": "Payment id=\"ZtAXgQi0tz8Xj1E5nABzpr2DOpoCUX7Sfc41DbpqSZg\", realm=\"127.0.0.1\", method=\"tempo\", intent=\"charge\", request=\"eyJhbW91bnQiOiIxMDAwMDAiLCJjdXJyZW5jeSI6IjB4MjBjMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMCIsIm1ldGhvZERldGFpbHMiOnsiY2hhaW5JZCI6NDI0MzF9LCJyZWNpcGllbnQiOiIweEU4QzBERDJDRjc1NWJEOTBENGVhNUYyZjJEYTFkODdlOTBBYjY1YzkifQ\", description=\"MPP Tempo demo - 0.1 pathUSD (testnet)\", expires=\"2026-04-08T22:32:11.074Z\"",
+      "x-powered-by": "Express"
+    },
+    "wwwAuthenticate": "Payment id=\"ZtAXgQi0tz8Xj1E5nABzpr2DOpoCUX7Sfc41DbpqSZg\", realm=\"127.0.0.1\", method=\"tempo\", intent=\"charge\", request=\"eyJhbW91bnQiOiIxMDAwMDAiLCJjdXJyZW5jeSI6IjB4MjBjMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMCIsIm1ldGhvZERldGFpbHMiOnsiY2hhaW5JZCI6NDI0MzF9LCJyZWNpcGllbnQiOiIweEU4QzBERDJDRjc1NWJEOTBENGVhNUYyZjJEYTFkODdlOTBBYjY1YzkifQ\", description=\"MPP Tempo demo - 0.1 pathUSD (testnet)\", expires=\"2026-04-08T22:32:11.074Z\""
+  },
+  "challenge": {
+    "description": "MPP Tempo demo - 0.1 pathUSD (testnet)",
+    "expires": "2026-04-08T22:32:11.074Z",
+    "id": "ZtAXgQi0tz8Xj1E5nABzpr2DOpoCUX7Sfc41DbpqSZg",
+    "intent": "charge",
+    "method": "tempo",
+    "realm": "127.0.0.1",
+    "request": {
+      "amount": "100000",
+      "currency": "0x20c0000000000000000000000000000000000000",
+      "methodDetails": {
+        "chainId": 42431
+      },
+      "recipient": "0xE8C0DD2CF755bD90D4ea5F2f2Da1d87e90Ab65c9"
+    }
+  },
+  "wwwAuthenticateSerialized": "Payment id=\"ZtAXgQi0tz8Xj1E5nABzpr2DOpoCUX7Sfc41DbpqSZg\", realm=\"127.0.0.1\", method=\"tempo\", intent=\"charge\", request=\"eyJhbW91bnQiOiIxMDAwMDAiLCJjdXJyZW5jeSI6IjB4MjBjMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMCIsIm1ldGhvZERldGFpbHMiOnsiY2hhaW5JZCI6NDI0MzF9LCJyZWNpcGllbnQiOiIweEU4QzBERDJDRjc1NWJEOTBENGVhNUYyZjJEYTFkODdlOTBBYjY1YzkifQ\", description=\"MPP Tempo demo - 0.1 pathUSD (testnet)\", expires=\"2026-04-08T22:32:11.074Z\"",
+  "mockAuction": {
+    "auctionId": "mock-auction-1775687231331",
+    "status": "cleared_for_issuance",
+    "settledAt": "2026-04-08T22:27:11.331Z",
+    "note": "Replace with real auction result payload when wired up."
+  },
+  "mockBank": {
+    "issuerId": "mock-bank-moderato-demo",
+    "issuerName": "Mock Issuer (replace with your bank)",
+    "programId": "mock-pathusd-program",
+    "issuingTerms": {
+      "asset": "pathUSD",
+      "network": "Tempo Moderato (testnet)",
+      "maxAmountMinorUnits": "100000",
+      "currencyContract": "0x20c0000000000000000000000000000000000000",
+      "validHours": 24,
+      "aprPercent": "0.00"
+    },
+    "attestation": {
+      "format": "mock-jwt-placeholder",
+      "token": "eyJhbGciOiJub25lIn0.eyJtb2NrIjp0cnVlfQ."
+    }
+  },
+  "integration": {
+    "mppChallengeId": "ZtAXgQi0tz8Xj1E5nABzpr2DOpoCUX7Sfc41DbpqSZg",
+    "nextStep": "To finish the HTTP transaction on-device, call the mppx `createCredential` path with the original 402 challenge (see agent.mjs onChallenge). Mock bank terms are parallel metadata until you implement issuer-driven credentials."
+  }
+}

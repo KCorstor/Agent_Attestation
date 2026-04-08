@@ -12,11 +12,37 @@
 import { buildPaymentBundle, createCapture402Fetch } from "./payment_bundle.mjs";
 
 /**
+ * Decide whether parsed JSON from the terms file allows the transaction to continue.
+ * - `proceed` — return this object and move on to payment.
+ * - `wait` — keep polling (e.g. auction still pending).
+ * - `abort` — throw; payment will not run.
+ *
+ * Default rules (mock issuer friendly):
+ * - `mockAuction.status === "pending"` → wait
+ * - `mockAuction.status === "rejected"` or `proceed === false` → abort
+ * - `mockAuction.status === "cleared_for_issuance"` or missing mockAuction → proceed
+ *
+ * @param {unknown} terms
+ * @returns {"proceed" | "wait" | "abort"}
+ */
+export function defaultAcceptTerms(terms) {
+  if (!terms || typeof terms !== "object") return "proceed";
+  const t = /** @type {Record<string, unknown>} */ (terms);
+  if (t.proceed === false) return "abort";
+  const st = t.mockAuction && typeof t.mockAuction === "object"
+    ? /** @type {Record<string, unknown>} */ (t.mockAuction).status
+    : undefined;
+  if (st === "pending") return "wait";
+  if (st === "rejected") return "abort";
+  return "proceed";
+}
+
+/**
  * @param {object} config
  * @param {typeof fetch} [config.underlyingFetch]
- * @param {(bundle: object) => void | Promise<void>} [config.onBundle] - Runs after building the bundle; log, enqueue auction, etc.
- * @param {(bundle: object, terms: unknown) => void | Promise<void>} [config.onTerms] - Runs after terms arrive (before paying).
- * @param {(bundle: object) => void | Promise<void>} [config.waitForTerms] - If omitted, no pause (same as immediate pay).
+ * @param {(bundle: object) => void | Promise<void>} [config.onBundle]
+ * @param {(bundle: object, terms: unknown) => void | Promise<void>} [config.onTerms]
+ * @param {(bundle: object) => void | Promise<void>} [config.waitForTerms] - If omitted, no pause.
  */
 export function createAuctionGate(config) {
   const {
@@ -48,40 +74,102 @@ export function createAuctionGate(config) {
 }
 
 /**
- * Poll until `path` exists and contains JSON (auction / mock issuer wrote the file).
+ * Poll `path` until JSON exists and `acceptTerms` returns `proceed`.
+ * Time-based pings: `onPing` is called at most every `pingIntervalMs` while waiting.
  *
  * @param {string} path
- * @param {{ pollMs?: number; timeoutMs?: number }} [opts]
+ * @param {{
+ *   pollMs?: number;
+ *   timeoutMs?: number;
+ *   pingIntervalMs?: number;
+ *   acceptTerms?: (parsed: unknown) => "proceed" | "wait" | "abort";
+ *   onPing?: (info: { elapsedMs: number; attempt: number; phase: string; detail?: string }) => void;
+ * }} [opts]
  */
 export async function waitForTermsFile(path, opts = {}) {
   const pollMs = opts.pollMs ?? Number(process.env.MPP_AUCTION_POLL_MS || 500);
   const timeoutMs = opts.timeoutMs ?? Number(process.env.MPP_AUCTION_TIMEOUT_MS || 0);
+  const pingIntervalMs =
+    opts.pingIntervalMs ?? Number(process.env.MPP_AUCTION_PING_INTERVAL_MS || 2000);
+  const acceptTerms = opts.acceptTerms ?? defaultAcceptTerms;
+  const onPing = opts.onPing;
+
   const { access, readFile } = await import("node:fs/promises");
   const start = Date.now();
+  let attempt = 0;
+  let lastPingAt = 0;
+
+  function maybePing(phase, detail) {
+    attempt += 1;
+    const elapsedMs = Date.now() - start;
+    if (!onPing) return;
+    if (pingIntervalMs <= 0 || Date.now() - lastPingAt >= pingIntervalMs) {
+      lastPingAt = Date.now();
+      onPing({ elapsedMs, attempt, phase, detail });
+    }
+  }
 
   for (;;) {
+    if (timeoutMs > 0 && Date.now() - start > timeoutMs) {
+      throw new Error(`Timed out waiting for auction terms file: ${path}`);
+    }
+
     try {
       await access(path);
-      const raw = await readFile(path, "utf8").then((s) => s.trim());
-      if (!raw) {
-        await sleep(pollMs);
-        continue;
-      }
-      return JSON.parse(raw);
     } catch (e) {
       if (e && typeof e === "object" && "code" in e && e.code === "ENOENT") {
-        if (timeoutMs > 0 && Date.now() - start > timeoutMs) {
-          throw new Error(`Timed out waiting for auction terms file: ${path}`);
-        }
-        await sleep(pollMs);
-        continue;
-      }
-      if (e instanceof SyntaxError) {
+        maybePing("file_missing", path);
         await sleep(pollMs);
         continue;
       }
       throw e;
     }
+
+    let raw;
+    try {
+      raw = await readFile(path, "utf8").then((s) => s.trim());
+    } catch (e) {
+      maybePing("read_error", String(e));
+      await sleep(pollMs);
+      continue;
+    }
+
+    if (!raw) {
+      maybePing("file_empty", path);
+      await sleep(pollMs);
+      continue;
+    }
+
+    let parsed;
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      maybePing("invalid_json", "waiting for complete JSON");
+      await sleep(pollMs);
+      continue;
+    }
+
+    const decision = acceptTerms(parsed);
+    if (decision === "wait") {
+      maybePing("terms_pending", "mockAuction.status=pending or equivalent");
+      await sleep(pollMs);
+      continue;
+    }
+    if (decision === "abort") {
+      throw new Error(
+        `Auction terms rejected or declined the transaction (file: ${path})`,
+      );
+    }
+
+    if (onPing) {
+      onPing({
+        elapsedMs: Date.now() - start,
+        attempt,
+        phase: "terms_accepted",
+        detail: "proceeding to payment",
+      });
+    }
+    return parsed;
   }
 }
 
@@ -91,7 +179,6 @@ function sleep(ms) {
 
 /**
  * Compose multiple `onChallenge` handlers (runs in order). First non-undefined return wins.
- * Use this to overlay auction pause on an agent that already has `onChallenge`.
  */
 export function chainOnChallenge(...handlers) {
   return async (challenge, helpers) => {
@@ -105,8 +192,7 @@ export function chainOnChallenge(...handlers) {
 }
 
 /**
- * Build `waitForTerms` from env (zero code changes in the agent besides importing this).
- * Set `MPP_AUCTION_TERMS_FILE` to a path; when unset, returns `undefined` (no pause).
+ * Build `waitForTerms` from env. When `MPP_AUCTION_TERMS_FILE` is unset, returns `undefined` (no pause).
  */
 export function waitForTermsFromEnv() {
   const p = process.env.MPP_AUCTION_TERMS_FILE?.trim();
