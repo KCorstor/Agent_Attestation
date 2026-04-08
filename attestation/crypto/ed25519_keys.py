@@ -5,7 +5,7 @@ from __future__ import annotations
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 
-from attestation.issuer_config import ed25519_seed_hex
+from attestation.issuer.config import ed25519_seed_hex
 
 
 def load_or_generate_private_key() -> Ed25519PrivateKey:

@@ -10,7 +10,7 @@ from fastapi.testclient import TestClient
 
 import main as main_mod
 from attestation.schemas import CreateAttestationRequest
-from attestation.step3_create import create_attestation_request
+from attestation.steps.step3_verify import create_attestation_request
 
 
 def _mock_plaid_ok() -> httpx.MockTransport:

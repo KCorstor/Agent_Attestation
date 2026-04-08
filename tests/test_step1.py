@@ -7,8 +7,8 @@ import pytest
 from fastapi.testclient import TestClient
 
 from attestation.schemas import InitAttestationRequest
-from attestation.sessions import SessionStore
-from attestation.step1 import initiate_attestation
+from attestation.steps.session_store import SessionStore
+from attestation.steps.step1_init import initiate_attestation
 import main as main_mod
 
 

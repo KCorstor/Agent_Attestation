@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from attestation.challenge_text import build_challenge_message, format_challenge_timestamp
+from attestation.steps.challenge_text import build_challenge_message, format_challenge_timestamp
 
 
 def test_timestamp_format() -> None:

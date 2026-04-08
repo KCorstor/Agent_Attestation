@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from attestation.issuer_config import issuer_did, verification_method_id
-from attestation.multibase import mb58_encode
+from attestation.crypto.multibase import mb58_encode
+from attestation.issuer.config import issuer_did, verification_method_id
 
 
 def build_did_document(public_key_ed25519_32: bytes) -> dict[str, Any]:

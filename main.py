@@ -33,14 +33,14 @@ from attestation.schemas import (
     IssueAttestationRequest,
     IssueAttestationResponse,
 )
-from attestation.step1 import initiate_attestation
-from attestation.step2 import get_or_create_challenge
-from attestation.step3_create import create_attestation_request
-from attestation.issue_credential import CredentialIssuer
-from attestation.did import build_did_document
-from attestation.dev_plaid_sandbox import create_sandbox_access_token
-from attestation.demo_bids import store as bid_demo_store
-from attestation.demo_full_flow import run_full_demo
+from attestation.demo.bid_rails import store as bid_demo_store
+from attestation.demo.full_flow import run_full_demo
+from attestation.issuer.did_web import build_did_document
+from attestation.plaid.sandbox_helpers import create_sandbox_access_token
+from attestation.steps.step1_init import initiate_attestation
+from attestation.steps.step2_challenge import get_or_create_challenge
+from attestation.steps.step3_verify import create_attestation_request
+from attestation.steps.step4_issue import CredentialIssuer
 
 app = FastAPI(title="Agent Attestation", version="0.1.0")
 

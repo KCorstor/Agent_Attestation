@@ -7,9 +7,9 @@ import pytest
 from fastapi.testclient import TestClient
 
 from attestation.schemas import InitAttestationRequest
-from attestation.step1 import initiate_attestation
-from attestation.step2 import get_or_create_challenge
-from attestation.sessions import SessionStore
+from attestation.steps.step1_init import initiate_attestation
+from attestation.steps.step2_challenge import get_or_create_challenge
+from attestation.steps.session_store import SessionStore
 import main as main_mod
 
 
@@ -55,7 +55,7 @@ def test_challenge_unknown_session() -> None:
 
 
 def test_http_challenge_after_init(monkeypatch: pytest.MonkeyPatch) -> None:
-    from attestation import step1 as step1_mod
+    from attestation.steps import step1_init as step1_mod
 
     store = SessionStore()
 
@@ -67,7 +67,7 @@ def test_http_challenge_after_init(monkeypatch: pytest.MonkeyPatch) -> None:
         )
 
     monkeypatch.setattr(main_mod, "initiate_attestation", patched_init)
-    import attestation.sessions as sessions_mod
+    import attestation.steps.session_store as sessions_mod
 
     monkeypatch.setattr(sessions_mod, "store", store)
 

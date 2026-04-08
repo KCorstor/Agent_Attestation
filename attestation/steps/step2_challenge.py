@@ -5,10 +5,10 @@ from __future__ import annotations
 import secrets
 from datetime import datetime, timezone
 
-from attestation import sessions as sessions_module
-from attestation.challenge_text import build_challenge_message, format_challenge_timestamp
+from attestation.steps import session_store as sessions_module
+from attestation.steps.challenge_text import build_challenge_message, format_challenge_timestamp
 from attestation.schemas import ChallengeResponse
-from attestation.sessions import SessionStore
+from attestation.steps.session_store import SessionStore
 
 
 def get_or_create_challenge(

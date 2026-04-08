@@ -9,7 +9,7 @@ from eth_account.messages import encode_defunct
 from fastapi.testclient import TestClient
 
 import main as main_mod
-from attestation.issue_credential import CredentialIssuer
+from attestation.steps.step4_issue import CredentialIssuer
 from attestation.schemas import IssueAttestationRequest
 
 
@@ -28,7 +28,7 @@ def _mock_plaid_ok() -> httpx.MockTransport:
 @pytest.mark.asyncio
 async def test_issue_returns_signed_credential(monkeypatch: pytest.MonkeyPatch) -> None:
     # Patch Plaid verification so no network is used.
-    import attestation.step3_create as step3_mod
+    import attestation.steps.step3_verify as step3_mod
 
     async def fake_verify_access_token(*, base_url, client_id, secret, access_token, transport=None):  # noqa: ANN001, ARG001
         return {
@@ -61,7 +61,7 @@ async def test_issue_returns_signed_credential(monkeypatch: pytest.MonkeyPatch) 
 
 
 def test_http_issue_and_did(monkeypatch: pytest.MonkeyPatch) -> None:
-    import attestation.step3_create as step3_mod
+    import attestation.steps.step3_verify as step3_mod
 
     async def fake_verify_access_token(*, base_url, client_id, secret, access_token, transport=None):  # noqa: ANN001, ARG001
         return {

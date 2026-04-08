@@ -6,7 +6,7 @@ from typing import Any
 
 import httpx
 
-from attestation.config import is_demo_mode
+from attestation.plaid.settings import is_demo_mode
 
 
 def _demo_accounts_get_payload() -> dict[str, Any]:

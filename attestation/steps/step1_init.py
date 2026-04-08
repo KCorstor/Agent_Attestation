@@ -1,4 +1,4 @@
-"""Step 3: create (verify) an attestation request on our service."""
+"""Step 1 handler: verify Plaid token + create session."""
 
 from __future__ import annotations
 
@@ -6,13 +6,15 @@ from typing import Any
 
 import httpx
 
-from attestation.config import load_plaid_settings
-from attestation.evm_signatures import addresses_match, recover_personal_sign_address
-from attestation.plaid_verify import PlaidApiError, verify_access_token
-from attestation.schemas import CreateAttestationRequest, CreateAttestationResponse
+from attestation.schemas import InitAttestationRequest, InitAttestationResponse
+from attestation.plaid.settings import load_plaid_settings
+from attestation.plaid.verify import PlaidApiError, verify_access_token
+from attestation.steps import session_store as sessions_module
+from attestation.steps.session_store import SessionStore
 
 
 def _summarize_plaid_accounts_payload(data: dict[str, Any]) -> dict[str, Any]:
+    """Strip PII-heavy fields for the API response; keep ids/counts for debugging."""
     accounts = data.get("accounts")
     n = len(accounts) if isinstance(accounts, list) else 0
     item = data.get("item") if isinstance(data.get("item"), dict) else {}
@@ -23,18 +25,13 @@ def _summarize_plaid_accounts_payload(data: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-async def create_attestation_request(
-    body: CreateAttestationRequest,
+async def initiate_attestation(
+    body: InitAttestationRequest,
     *,
+    session_store: SessionStore | None = None,
     transport: httpx.BaseTransport | None = None,
-) -> CreateAttestationResponse:
-    """
-    Verifies:
-    - Plaid `access_token` works (via /accounts/get)
-    - Signature recovers the claimed `wallet_address` (EVM personal_sign / EIP-191)
-
-    Returns a verified response suitable to feed into an issuance step (Step 5).
-    """
+) -> InitAttestationResponse:
+    store = session_store if session_store is not None else sessions_module.store
     settings = load_plaid_settings()
     try:
         plaid_data = await verify_access_token(
@@ -47,18 +44,22 @@ async def create_attestation_request(
     except PlaidApiError as e:
         raise ValueError(f"Plaid rejected access_token: {e}") from e
 
-    recovered = recover_personal_sign_address(message=body.message, signature=body.signature)
-    verified = addresses_match(recovered, body.wallet_address)
-    if not verified:
-        raise ValueError("wallet signature does not match wallet_address")
-
     summary = _summarize_plaid_accounts_payload(plaid_data)
-    return CreateAttestationResponse(
+    sess = store.create(
         wallet_address=body.wallet_address,
-        verified_wallet_signature=True,
-        recovered_address=recovered,
+        access_token=body.access_token,
         plaid_item_id=summary.get("item_id"),
         plaid_institution_id=summary.get("institution_id"),
         account_count=int(summary.get("account_count") or 0),
+        plaid_raw_summary=summary,
     )
 
+    return InitAttestationResponse(
+        session_id=sess.session_id,
+        wallet_address=sess.wallet_address,
+        plaid_verified=True,
+        plaid_item_id=sess.plaid_item_id,
+        plaid_institution_id=sess.plaid_institution_id,
+        account_count=sess.account_count,
+        created_at=sess.created_at,
+    )

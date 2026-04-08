@@ -6,7 +6,7 @@ from typing import Any
 
 import httpx
 
-from attestation.config import load_plaid_settings
+from attestation.plaid.settings import load_plaid_settings
 
 
 async def create_sandbox_access_token(

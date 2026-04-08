@@ -8,13 +8,13 @@ from typing import Any
 import httpx
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
-from attestation.canonical_json import canonical_json_bytes
-from attestation.claims_provider import ClaimsProvider, MockClaimsProvider
-from attestation.ed25519_keys import load_or_generate_private_key, public_key_raw_32
-from attestation.issuer_config import issuer_did, verification_method_id
-from attestation.multibase import mb58_encode
+from attestation.crypto.canonical_json import canonical_json_bytes
+from attestation.crypto.ed25519_keys import load_or_generate_private_key, public_key_raw_32
+from attestation.crypto.multibase import mb58_encode
+from attestation.issuer.claims_provider import ClaimsProvider, MockClaimsProvider
+from attestation.issuer.config import issuer_did, verification_method_id
 from attestation.schemas import IssueAttestationRequest, IssueAttestationResponse
-from attestation.step3_create import create_attestation_request
+from attestation.steps.step3_verify import create_attestation_request
 
 
 def _iso_z(dt: datetime) -> str:

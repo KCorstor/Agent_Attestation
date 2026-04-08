@@ -1,4 +1,6 @@
 .env
+mpp_spt_server/.env
+node_modules/
 .venv/
 __pycache__/
 *.pyc
