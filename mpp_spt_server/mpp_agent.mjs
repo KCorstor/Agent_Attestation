@@ -9,6 +9,78 @@
  *   - mpp_spt_server running (npm start) with the same .env (especially mock SPT vars)
  *   - Machine payments / SPT test helpers enabled on your Stripe test account
  *
+ * Plays the mock *grantor* (e.g. issuing bank that won your auction): creates a
+ * PaymentMethod for the borrower, mints an SPT bound to the same seller as the
+ * MPP server (MPP_MOCK_SELLER_*), then pays the 402.
+ *
+ * Prerequisites:
+ *   - mpp_spt_server running (npm start) with the same .env (especially mock SPT vars)
+ *   - Machine payments / SPT test helpers enabled on your Stripe test account
+ *
+ * Plays the mock *grantor* (e.g. issuing bank that won your auction): creates a
+ * PaymentMethod for the borrower, mints an SPT bound to the same seller as the
+ * MPP server (MPP_MOCK_SELLER_*), then pays the 402.
+ *
+ * Prerequisites:
+ *   - mpp_spt_server running (npm start) with the same .env (especially mock SPT vars)
+ *   - Machine payments / SPT test helpers enabled on your Stripe test account
+ *
+ * Plays the mock *grantor* (e.g. issuing bank that won your auction): creates a
+ * PaymentMethod for the borrower, mints an SPT bound to the same seller as the
+ * MPP server (MPP_MOCK_SELLER_*), then pays the 402.
+ *
+ * Prerequisites:
+ *   - mpp_spt_server running (npm start) with the same .env (especially mock SPT vars)
+ *   - Machine payments / SPT test helpers enabled on your Stripe test account
+ *
+ * Plays the mock *grantor* (e.g. issuing bank that won your auction): creates a
+ * PaymentMethod for the borrower, mints an SPT bound to the same seller as the
+ * MPP server (MPP_MOCK_SELLER_*), then pays the 402.
+ *
+ * Prerequisites:
+ *   - mpp_spt_server running (npm start) with the same .env (especially mock SPT vars)
+ *   - Machine payments / SPT test helpers enabled on your Stripe test account
+ *
+ * Plays the mock *grantor* (e.g. issuing bank that won your auction): creates a
+ * PaymentMethod for the borrower, mints an SPT bound to the same seller as the
+ * MPP server (MPP_MOCK_SELLER_*), then pays the 402.
+ *
+ * Prerequisites:
+ *   - mpp_spt_server running (npm start) with the same .env (especially mock SPT vars)
+ *   - Machine payments / SPT test helpers enabled on your Stripe test account
+ *
+ * Plays the mock *grantor* (e.g. issuing bank that won your auction): creates a
+ * PaymentMethod for the borrower, mints an SPT bound to the same seller as the
+ * MPP server (MPP_MOCK_SELLER_*), then pays the 402.
+ *
+ * Prerequisites:
+ *   - mpp_spt_server running (npm start) with the same .env (especially mock SPT vars)
+ *   - Machine payments / SPT test helpers enabled on your Stripe test account
+ *
+ * Plays the mock *grantor* (e.g. issuing bank that won your auction): creates a
+ * PaymentMethod for the borrower, mints an SPT bound to the same seller as the
+ * MPP server (MPP_MOCK_SELLER_*), then pays the 402.
+ *
+ * Prerequisites:
+ *   - mpp_spt_server running (npm start) with the same .env (especially mock SPT vars)
+ *   - Machine payments / SPT test helpers enabled on your Stripe test account
+ *
+ * Plays the mock *grantor* (e.g. issuing bank that won your auction): creates a
+ * PaymentMethod for the borrower, mints an SPT bound to the same seller as the
+ * MPP server (MPP_MOCK_SELLER_*), then pays the 402.
+ *
+ * Prerequisites:
+ *   - mpp_spt_server running (npm start) with the same .env (especially mock SPT vars)
+ *   - Machine payments / SPT test helpers enabled on your Stripe test account
+ *
+ * Plays the mock *grantor* (e.g. issuing bank that won your auction): creates a
+ * PaymentMethod for the borrower, mints an SPT bound to the same seller as the
+ * MPP server (MPP_MOCK_SELLER_*), then pays the 402.
+ *
+ * Prerequisites:
+ *   - mpp_spt_server running (npm start) with the same .env (especially mock SPT vars)
+ *   - Machine payments / SPT test helpers enabled on your Stripe test account
+ *
  * Run:  npm run agent
  *   or  MPP_PAID_URL=http://127.0.0.1:4242/paid npm run agent
  */

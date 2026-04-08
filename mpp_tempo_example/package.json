@@ -1,0 +1,22 @@
+{
+  "name": "mpp_tempo_example",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Minimal MPP server + agent on Tempo (testnet) — no Stripe",
+  "scripts": {
+    "start": "node server.mjs",
+    "agent": "node agent.mjs",
+    "auction:release": "node release_mock_auction.mjs",
+    "wallet:setup": "node setup-wallet.mjs"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "express": "^5.1.0",
+    "mppx": "^0.5.7",
+    "viem": "^2.47.5"
+  }
+}

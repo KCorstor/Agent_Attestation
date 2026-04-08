@@ -28,6 +28,13 @@ export function mockSptConfigFromEnv() {
 
   const paymentMethodId = (process.env.MPP_MOCK_PAYMENT_METHOD_ID || "").trim();
 
+  /** Default: Stripe test token (no raw-card API). @see https://stripe.com/docs/testing */
+  const stripeCardToken = (process.env.MPP_MOCK_STRIPE_CARD_TOKEN || "tok_visa").trim();
+
+  const useRawCardData =
+    process.env.MPP_MOCK_USE_RAW_CARD_DATA === "1" ||
+    process.env.MPP_MOCK_USE_RAW_CARD_DATA === "true";
+
   const card = {
     number: (process.env.MPP_MOCK_CARD_NUMBER || "4242424242424242").replace(/\s/g, ""),
     exp_month: Number(process.env.MPP_MOCK_CARD_EXP_MONTH || "12"),
@@ -41,16 +48,24 @@ export function mockSptConfigFromEnv() {
     grantorExternalId,
     grantorLabel,
     paymentMethodId,
+    stripeCardToken,
+    useRawCardData,
     card,
   };
 }
 
 export function describeMockSptConfig(mock) {
+  let pmSource = "MPP_MOCK_PAYMENT_METHOD_ID";
+  if (!mock.paymentMethodId) {
+    pmSource = mock.useRawCardData
+      ? "MPP_MOCK_CARD_* raw (requires Stripe raw card data API)"
+      : `Stripe test token ${mock.stripeCardToken} (MPP_MOCK_STRIPE_CARD_TOKEN)`;
+  }
   return {
     seller_network_id: mock.sellerNetworkId,
     seller_external_id: mock.sellerExternalId,
     grantor_external_id: mock.grantorExternalId,
     grantor_label: mock.grantorLabel,
-    payment_method_source: mock.paymentMethodId ? "MPP_MOCK_PAYMENT_METHOD_ID" : "MPP_MOCK_CARD_* (new PM each run)",
+    payment_method_source: pmSource,
   };
 }

@@ -71,6 +71,22 @@ npm run agent
 
 If Stripe returns an error on the test helper, your account may need **agentic commerce / machine payments** access; see [Machine payments](https://docs.stripe.com/payments/machine#sign-up).
 
+## PostalForm (real printed mail)
+
+The same MPP + Stripe SPT client can pay **[PostalForm](https://postalform.com)**’s machine API so an agent can **print and mail a physical letter** ([agents guide](https://postalform.com/agents)).
+
+1. Set **`POSTALFORM_BUYER_EMAIL`** in `.env` (required by PostalForm for receipts).
+2. Optionally set **`POSTALFORM_*`** address and PDF variables (see `.env.example`); default PDF is `fixtures/sample-letter.pdf` (small W3C sample PDF).
+3. Run:
+
+   ```bash
+   npm run agent:postalform
+   ```
+
+The script calls **`POST /api/machine/mpp/orders/validate`**, then **`POST /api/machine/mpp/orders`** with the same JSON body; **`mppx`** handles **402 → SPT → retry**. If PostalForm returns only a **Tempo** challenge, add a Tempo method to the client or use their **legacy x402** / **`purl`** flow instead.
+
+Set **`POSTALFORM_STRIPE_SELLER_EXTERNAL_ID`** / **`POSTALFORM_STRIPE_NETWORK_ID`** if your Stripe SPT grant must match PostalForm’s Business Network profile (see validate response and Stripe docs).
+
 ## Configuration (core)
 
 
@@ -87,7 +103,8 @@ If Stripe returns an error on the test helper, your account may need **agentic c
 
 - `**Invalid character in header content ["WWW-Authenticate"]`** (Node): The MPP challenge embeds `description` in the `WWW-Authenticate` value. Use **ASCII-only** text there (no smart quotes or em dashes).
 - **Node version**: `mppx` dependencies may warn below **Node 22**; upgrade if anything fails at runtime.
-- **SPT rejected / seller mismatch**: Ensure `**MPP_MOCK_SELLER_NETWORK_ID`** and `**MPP_MOCK_SELLER_EXTERNAL_ID**` are identical in the **same** `.env` for both `npm start` and `npm run agent`.
+- **SPT rejected / seller mismatch**: Ensure **`MPP_MOCK_SELLER_NETWORK_ID`** and **`MPP_MOCK_SELLER_EXTERNAL_ID`** are identical in the **same** `.env` for both `npm start` and `npm run agent`.
+- **404 on `POST .../test_helpers/shared_payment/granted_tokens`**: The SPT test helper is not available on every test account (often gated with [machine payments](https://docs.stripe.com/payments/machine#sign-up) / agentic commerce). Until Stripe enables it, you can still run the server and confirm **`curl /paid` → 402**; the agent will fail at the SPT mint step.
 
 ## Security
 
