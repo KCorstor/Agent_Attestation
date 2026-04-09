@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-04-09T20:41:06.154Z",
+  "purpose": "mpp_payment_required_bundle_for_downstream_auction",
+  "request": {
+    "url": "http://127.0.0.1:4243/paid",
+    "method": "GET"
+  },
+  "http402": {
+    "status": 402,
+    "headers": {
+      "cache-control": "no-store",
+      "connection": "keep-alive",
+      "content-length": "233",
+      "content-type": "application/problem+json; charset=utf-8",
+      "date": "Thu, 09 Apr 2026 20:41:06 GMT",
+      "etag": "W/\"e9-cIkrC0cc8SrJMbKgCKxNzpGjeSQ\"",
+      "keep-alive": "timeout=5",
+      "www-authenticate": "Payment id=\"rKI9mvi5T7poKPgXlYd4VEKEGxviCtZ-EGcx5mJbvB4\", realm=\"127.0.0.1\", method=\"tempo\", intent=\"charge\", request=\"eyJhbW91bnQiOiIxMDAwMDAiLCJjdXJyZW5jeSI6IjB4MjBjMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMCIsIm1ldGhvZERldGFpbHMiOnsiY2hhaW5JZCI6NDI0MzF9LCJyZWNpcGllbnQiOiIweEU4QzBERDJDRjc1NWJEOTBENGVhNUYyZjJEYTFkODdlOTBBYjY1YzkifQ\", description=\"MPP Tempo demo - 0.1 pathUSD (testnet)\", expires=\"2026-04-09T20:46:06.148Z\"",
+      "x-powered-by": "Express"
+    },
+    "wwwAuthenticate": "Payment id=\"rKI9mvi5T7poKPgXlYd4VEKEGxviCtZ-EGcx5mJbvB4\", realm=\"127.0.0.1\", method=\"tempo\", intent=\"charge\", request=\"eyJhbW91bnQiOiIxMDAwMDAiLCJjdXJyZW5jeSI6IjB4MjBjMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMCIsIm1ldGhvZERldGFpbHMiOnsiY2hhaW5JZCI6NDI0MzF9LCJyZWNpcGllbnQiOiIweEU4QzBERDJDRjc1NWJEOTBENGVhNUYyZjJEYTFkODdlOTBBYjY1YzkifQ\", description=\"MPP Tempo demo - 0.1 pathUSD (testnet)\", expires=\"2026-04-09T20:46:06.148Z\""
+  },
+  "challenge": {
+    "description": "MPP Tempo demo - 0.1 pathUSD (testnet)",
+    "expires": "2026-04-09T20:46:06.148Z",
+    "id": "rKI9mvi5T7poKPgXlYd4VEKEGxviCtZ-EGcx5mJbvB4",
+    "intent": "charge",
+    "method": "tempo",
+    "realm": "127.0.0.1",
+    "request": {
+      "amount": "100000",
+      "currency": "0x20c0000000000000000000000000000000000000",
+      "methodDetails": {
+        "chainId": 42431
+      },
+      "recipient": "0xE8C0DD2CF755bD90D4ea5F2f2Da1d87e90Ab65c9"
+    }
+  },
+  "wwwAuthenticateSerialized": "Payment id=\"rKI9mvi5T7poKPgXlYd4VEKEGxviCtZ-EGcx5mJbvB4\", realm=\"127.0.0.1\", method=\"tempo\", intent=\"charge\", request=\"eyJhbW91bnQiOiIxMDAwMDAiLCJjdXJyZW5jeSI6IjB4MjBjMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMCIsIm1ldGhvZERldGFpbHMiOnsiY2hhaW5JZCI6NDI0MzF9LCJyZWNpcGllbnQiOiIweEU4QzBERDJDRjc1NWJEOTBENGVhNUYyZjJEYTFkODdlOTBBYjY1YzkifQ\", description=\"MPP Tempo demo - 0.1 pathUSD (testnet)\", expires=\"2026-04-09T20:46:06.148Z\""
+}

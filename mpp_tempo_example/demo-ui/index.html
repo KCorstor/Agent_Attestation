@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Attstr Payment Demo Flow</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="page">
+      <header class="hero">
+        <div class="hero__inner">
+          <p class="hero__eyebrow">Machine Payments Protocol · Tempo · mppx</p>
+          <h1 class="hero__title">Attstr Payment Demo Flow</h1>
+          <div class="hero__actions">
+            <button type="button" class="btn btn--primary" id="runAllBtn">Run all steps</button>
+            <a class="btn btn--primary" href="./flow.html" style="text-decoration: none; display: inline-flex; align-items: center; justify-content: center">How this demo works</a>
+            <button type="button" class="btn btn--primary" id="resetBtn">Reset only</button>
+          </div>
+          <p class="hero__hint" id="statusHint">Requires <code>mpp_tempo_example/.env</code></p>
+        </div>
+      </header>
+
+      <main class="layout">
+        <section class="panel panel--steps" aria-labelledby="stepsHeading">
+          <h2 id="stepsHeading" class="panel__title">Checkout phases</h2>
+          <div class="steps-scroll">
+            <ol class="steps" id="stepsList"></ol>
+          </div>
+          <div class="nav-row">
+            <button type="button" class="btn btn--ghost" id="prevBtn" disabled>← Previous</button>
+            <button type="button" class="btn btn--ghost" id="nextBtn" disabled>Next →</button>
+          </div>
+        </section>
+
+        <section class="panel panel--detail" aria-labelledby="detailHeading">
+          <div class="panel__head">
+            <h2 id="detailHeading" class="panel__title">Phase detail</h2>
+            <span class="badge" id="stepBadge">—</span>
+          </div>
+          <div class="detail-meta" id="detailMeta"></div>
+          <h3 class="subhead">Last payload (JSON)</h3>
+          <pre class="json" id="jsonOut"><code>// Run all steps or select a phase</code></pre>
+        </section>
+      </main>
+
+      <footer class="footer">
+        <p>
+          Single process: <code>agent.mjs</code> performs 402 handling, bundle, wait, Tempo pay, and retry. The
+          dashboard only resets, starts <code>server.mjs</code>, and runs <code>release_mock_auction.mjs</code> after
+          <code>checkout_402</code> to simulate lender terms arriving while the agent polls.
+        </p>
+      </footer>
+    </div>
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>

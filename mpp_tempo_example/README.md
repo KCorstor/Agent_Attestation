@@ -39,6 +39,16 @@ npm run agent
 
 The agent calls **`mppx.fetch`** on **`GET /paid`**. After **402**, it **waits** until the terms JSON file exists, then **`mppx`** pays and retries.
 
+### Demo dashboard (step-by-step UI)
+
+From **`mpp_tempo_example/`**, with **`.env`** configured and **port 4243 free** while the dashboard runs its own demo server:
+
+```bash
+npm run demo:ui
+```
+
+Open **http://127.0.0.1:3333**. Use **Run all steps** to reset, start the merchant server, and run **`agent.mjs`** end-to-end. **Reset only** clears state without running the agent. **Previous / Next** browse phases. Copy lives in **`demo-ui/steps.json`** (`runnable` marks which phases are separate actions vs outcomes of the agent run).
+
 ### 402 intercept → bundle (auction prep)
 
 When the server returns **402**, **`mppx`** parses the **`Payment`** challenge from **`WWW-Authenticate`**, then (by default) builds a credential and retries. This demo hooks that path in **`agent.mjs`**:

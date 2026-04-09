@@ -13,7 +13,7 @@
  *        npx mppx account create
  *        npx mppx account fund   # testnet faucet via mppx CLI
  *      Then set TEMPO_PRIVATE_KEY in .env to that account's private key.
- *   3. Same .env as server for MPP_PAID_URL if you change port.
+ *   3. If you change PORT, default paid URL is http://127.0.0.1:PORT/paid unless MPP_PAID_URL is set.
  *
  * Run: npm run agent
  */
@@ -40,8 +40,11 @@ import {
 // Secret key for the wallet that will pay (string from `.env`, may be empty).
 const keyRaw = process.env.TEMPO_PRIVATE_KEY?.trim();
 
-// URL we request; default is this repo’s demo server `/paid` on port 4243.
-const paidUrl = (process.env.MPP_PAID_URL || "http://127.0.0.1:4243/paid").trim();
+// URL we request — real HTTP GET to the merchant app (server.mjs). Default matches PORT.
+const merchantPort = Number(process.env.PORT || 4243);
+const paidUrl = (
+  process.env.MPP_PAID_URL || `http://127.0.0.1:${merchantPort}/paid`
+).trim();
 
 // If set, path to a JSON file where we save the bundle right after a 402.
 const bundleOut = process.env.MPP_BUNDLE_OUT?.trim();
@@ -68,19 +71,28 @@ const pk = keyRaw.startsWith("0x") ? keyRaw : `0x${keyRaw}`;
 // Account object used by `tempo.charge` to sign the Tempo payment.
 const account = privateKeyToAccount(pk);
 
+/** One-line JSON events for demo_dashboard (MPP_DEMO_EVENT=1). Same agent binary as production checkout. */
+function demoEvent(step, payload = {}) {
+  if (process.env.MPP_DEMO_EVENT !== "1") return;
+  const line = JSON.stringify({ step, t: new Date().toISOString(), ...payload });
+  process.stdout.write(`MPP_DEMO_EVENT:${line}\n`);
+}
+
 // One object that wraps `fetch` and always waits for terms JSON before allowing payment.
 const gate = createAuctionGate({
   // Blocks until `termsFile` has JSON that `defaultAcceptTerms` accepts (not pending/rejected).
   // Pings on a timer while waiting; see MPP_AUCTION_PING_INTERVAL_MS / MPP_AUCTION_QUIET.
-  waitForTerms: () =>
-    waitForTermsFile(termsFile, {
+  waitForTerms: async (_bundle) => {
+    demoEvent("waiting_terms", { termsFile });
+    return waitForTermsFile(termsFile, {
       acceptTerms: defaultAcceptTerms,
       onPing: ({ elapsedMs, phase, detail }) => {
         if (process.env.MPP_AUCTION_QUIET === "1") return;
         const s = (elapsedMs / 1000).toFixed(1);
         console.log(`[auction ping ${s}s] ${phase}${detail ? ` — ${detail}` : ""}`);
       },
-    }),
+    });
+  },
 
   // Runs once we have a 402 and a parsed bundle (before waiting / paying).
   onBundle: async (bundle) => {
@@ -94,6 +106,8 @@ const gate = createAuctionGate({
       console.log(`\nWrote bundle to ${bundleOut}`);
     }
 
+    demoEvent("checkout_402", { bundle });
+
     console.log(
       `\nWaiting for auction terms (poll ${process.env.MPP_AUCTION_POLL_MS || "500"}ms): ${termsFile}`,
     );
@@ -104,6 +118,10 @@ const gate = createAuctionGate({
   onTerms: async (_bundle, terms) => {
     console.log("\n--- auction terms received (proceeding to pay) ---");
     console.log(JSON.stringify(terms, null, 2));
+    demoEvent("terms_accepted", {
+      mockAuction: terms.mockAuction,
+      mockBank: terms.mockBank,
+    });
   },
 });
 
@@ -128,6 +146,13 @@ async function main() {
   console.log("  auction terms file (required wait):", termsFile);
   console.log("");
 
+  demoEvent("agent_start", {
+    payer: account.address,
+    paidUrl,
+    bundleOut: bundleOut || null,
+    termsFile,
+  });
+
   // This may do: GET → 402 → onChallenge (bundle/wait) → pay → GET again with Authorization.
   const res = await mppx.fetch(paidUrl);
   // Read body as text (demo server returns JSON string).
@@ -135,9 +160,16 @@ async function main() {
 
   console.log("\nFinal status:", res.status);
   // Server may attach a receipt header after successful payment.
-  console.log("Payment-Receipt:", res.headers.get("Payment-Receipt") || "(none)");
+  const receipt = res.headers.get("Payment-Receipt") || "(none)";
+  console.log("Payment-Receipt:", receipt);
   // Truncate so a huge body doesn’t flood the terminal.
   console.log("Body:", body.slice(0, 4000));
+
+  demoEvent("paid", {
+    status: res.status,
+    paymentReceipt: receipt !== "(none)" ? receipt : null,
+    bodyPreview: body.slice(0, 2000),
+  });
 }
 
 // Run `main`; if anything throws, print it and exit with failure code 1.

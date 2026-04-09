@@ -1,0 +1,55 @@
+[
+  {
+    "id": "reset",
+    "runnable": true,
+    "title": "Reset workspace",
+    "does": "Use before “Run all steps” or as the first manual step. This stops the demo child server (if this dashboard started it in previous runs) and deletes demo-ui-bundle.json and demo-ui-terms.json in mpp_tempo_example/. "
+  },
+  {
+    "id": "start-server",
+    "runnable": true,
+    "title": "Start demo MPP Merchant checkout server",
+    "does": "Runs a mock MPP Merchant. The /paid route is a normal HTTP GET: the first response is “payment required” (HTTP 402) and includes the payment challenge the client/agent must satisfy."
+  },
+  {
+    "id": "agent_start",
+    "runnable": true,
+    "title": "Agent starts checkout",
+    "does": "The agent initiates and prints its setup (wallet, merchant URL, etc). It then issues a real mppx.fetch to the merchant. After the merchant's 402 response, the agent builds a bundle with the details of the transaction that it would send out to auction for lenders to bid on. In this demo it's just written to disk as a stand-in cdecision on the transaction."
+  },
+  {
+    "id": "Bundle Built",
+    "runnable": false,
+    "title": "402 + payment bundle (agent)",
+    "does": "When mppx invokes onChallenge after the 402, the agent calls buildPaymentBundle, then onBundle runs — this demo phase is that instant (event + optional write to demo-ui-bundle.json), not a second assembly step. The bundle JSON combines the parsed MPP Payment challenge (what to pay — amount, asset, recipient, challenge identifiers, chain context, etc.) with HTTP context (request URL/method, WWW-Authenticate / Payment material). In production you would POST or queue that payload to an auction or credit desk; the file here simulates that handoff.",
+    "doesNot": "Does not pay yet; waitForTerms runs next in the same agent process."
+  },
+  {
+    "id": "waiting_terms",
+    "runnable": false,
+    "title": "Wait for lender / auction terms (agent)",
+    "does": "The agent polls MPP_AUCTION_TERMS_FILE until the file exists, parses as JSON, and defaultAcceptTerms returns proceed (not pending/rejected). Those terms are mock data in this repo; in a real system they would be the deal terms returned when an auction selects a winning bid (or the equivalent from your lender flow).",
+    "doesNot": "Does not contact a real auction service — the file is supplied locally in the next phase."
+  },
+  {
+    "id": "lender_terms_written",
+    "runnable": false,
+    "title": "Mock lender delivers terms (orchestrator)",
+    "does": "After checkout_402, the dashboard runs release_mock_auction.mjs (same as npm run auction:release for these paths): it reads the saved payment bundle and writes demo-ui-terms.json with mock auction/bank fields. That simulates the winning bid’s terms arriving from the auction side through whatever channel you use in production — webhook, queue, signed URL, etc.",
+    "doesNot": "This step is not inside agent.mjs; it unblocks the polling the agent is already doing."
+  },
+  {
+    "id": "terms_accepted",
+    "runnable": false,
+    "title": "Terms accepted (agent)",
+    "does": "After mock terms parse and pass defaultAcceptTerms (e.g. mockAuction.status cleared_for_issuance), the agent logs them. mppx then builds the Tempo credential from the original merchant Payment challenge — the terms JSON gates whether paying is allowed; it is not merged into the cryptographic payment proof.",
+    "doesNot": "Mock bank JSON is not the cryptographic credential; settlement follows the protocol challenge."
+  },
+  {
+    "id": "paid",
+    "runnable": false,
+    "title": "Paid + final HTTP result (agent)",
+    "does": "Emitted after the retried GET returns: HTTP status, Payment-Receipt header if present, and a short body preview. Same agent.mjs process end-to-end.",
+    "doesNot": "Does not represent mainnet or a real issuer — Moderato / demo server only."
+  }
+]

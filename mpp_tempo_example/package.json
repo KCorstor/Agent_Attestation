@@ -8,6 +8,7 @@
     "start": "node server.mjs",
     "agent": "node agent.mjs",
     "auction:release": "node release_mock_auction.mjs",
+    "demo:ui": "node demo_dashboard.mjs",
     "wallet:setup": "node setup-wallet.mjs"
   },
   "engines": {
