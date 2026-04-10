@@ -47,7 +47,7 @@ From **`mpp_tempo_example/`**, with **`.env`** configured and **port 4243 free**
 npm run demo:ui
 ```
 
-Open **http://127.0.0.1:3333**. Use **Run all steps** to reset, start the merchant server, and run **`agent.mjs`** end-to-end. **Reset only** clears state without running the agent. **Previous / Next** browse phases. Copy lives in **`demo-ui/steps.json`** (`runnable` marks which phases are separate actions vs outcomes of the agent run).
+Open **http://127.0.0.1:3333**. Use **Run all steps** to reset, start the merchant server, and run **`agent.mjs`** end-to-end. **Reset** clears state without running the agent. **Previous / Next** browse phases. Copy lives in **`demo-ui/steps.json`** (`runnable` marks which phases are separate actions vs outcomes of the agent run).
 
 ### 402 intercept → bundle (auction prep)
 

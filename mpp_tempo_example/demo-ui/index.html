@@ -20,13 +20,10 @@
           <h1 class="hero__title">Attstr Payment Demo Flow</h1>
           <div class="hero__actions">
             <button type="button" class="btn btn--primary" id="runAllBtn">Run all steps</button>
-            <a class="btn btn--primary" href="./flow.html" style="text-decoration: none; display: inline-flex; align-items: center; justify-content: center">How this demo works</a>
-            <button type="button" class="btn btn--primary" id="resetBtn">Reset only</button>
+            <a class="btn btn--primary" href="./flow.html" style="text-decoration: none; display: inline-flex; align-items: center; justify-content: center">Sequence diagram</a>
+            <button type="button" class="btn btn--primary" id="resetBtn">Reset</button>
           </div>
-          <p class="hero__hint" id="statusHint">
-            Requires <code>Agent_Attestation/.env</code> (see <code>mpp_spt_server/.env.example</code> or
-            <code>mpp_tempo_example/demo-ui/.env.example</code> for key names)
-          </p>
+          <p class="hero__hint" id="statusHint"></p>
         </div>
       </header>
 
@@ -52,14 +49,6 @@
           <pre class="json" id="jsonOut"><code>// Run all steps or select a phase</code></pre>
         </section>
       </main>
-
-      <footer class="footer">
-        <p>
-          Single process: <code>agent.mjs</code> performs 402 handling, bundle, wait, Tempo pay, and retry. The
-          dashboard only resets, starts <code>server.mjs</code>, and runs <code>release_mock_auction.mjs</code> after
-          <code>checkout_402</code> to simulate lender terms arriving while the agent polls.
-        </p>
-      </footer>
     </div>
     <script type="module" src="./app.js"></script>
   </body>

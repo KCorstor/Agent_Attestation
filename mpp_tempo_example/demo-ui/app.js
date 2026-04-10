@@ -90,7 +90,7 @@ function renderDetail() {
   if (!sr) {
     showJson({
       message: canRun
-        ? "This step has not been run yet. Use Run all steps (or Reset only, then Run all steps)."
+        ? "This step has not been run yet. Use Run all steps (or Reset, then Run all steps)."
         : "This phase is filled in when you run “Agent starts checkout” (one agent process).",
     });
     return;

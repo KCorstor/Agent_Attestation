@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>How this demo works — MPP Tempo</title>
+    <title>Sequence diagram — MPP Tempo</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -18,6 +18,16 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
+      }
+
+      /* Line up hero with the diagram column (same max-width + horizontal padding as main) */
+      .page > .hero .hero__inner {
+        max-width: min(1180px, 96vw);
+        padding-left: 1.25rem;
+        padding-right: 1.25rem;
+      }
+      .hero .flow-hero-actions {
+        justify-content: flex-start;
       }
 
       .layout--flow {
@@ -57,7 +67,7 @@
       <header class="hero">
         <div class="hero__inner">
           <p class="hero__eyebrow">Visual overview</p>
-          <h1 class="hero__title">How the checkout demo fits together</h1>
+          <h1 class="hero__title">Sequence diagram</h1>
           <div class="hero__actions flow-hero-actions">
             <a class="btn btn--primary" href="./index.html">Open live demo</a>
           </div>
