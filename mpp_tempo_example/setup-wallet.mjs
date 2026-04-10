@@ -19,8 +19,9 @@ import { Actions } from "viem/tempo";
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const envPath = resolve(__dirname, ".env");
-const examplePath = resolve(__dirname, ".env.example");
+/** Single source of truth: repo-root `.env` (same file `load-env.mjs` reads). */
+const envPath = resolve(__dirname, "..", ".env");
+const examplePath = resolve(__dirname, "demo-ui", ".env.example");
 const force = process.argv.includes("--force");
 const fundFlag = process.argv.includes("--fund");
 
@@ -130,7 +131,8 @@ if (!isValidPrivateKeyHex(verifyPk)) {
   console.error("ERROR: TEMPO_PRIVATE_KEY was not written correctly to .env");
   console.error("  File:", envPath);
   console.error("  Try: run this command from the mpp_tempo_example folder:");
-  console.error('    cd mpp_tempo_example && node setup-wallet.mjs');
+  console.error("    cd mpp_tempo_example && node setup-wallet.mjs");
+  console.error("  Keys are written to the repo-root .env (Agent_Attestation/.env).");
   process.exit(1);
 }
 

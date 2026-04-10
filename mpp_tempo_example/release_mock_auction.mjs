@@ -5,7 +5,7 @@
  * Terminal B: MPP_BUNDLE_OUT=./bundle.json MPP_AUCTION_TERMS_FILE=./terms.json npm run auction:release
  *   (or pass bundle path: node release_mock_auction.mjs ./bundle.json)
  */
-import "dotenv/config";
+import "./load-env.mjs";
 import { readFile, writeFile } from "node:fs/promises";
 import { attachMockIssuingTerms } from "./mock_auction_issuer.mjs";
 

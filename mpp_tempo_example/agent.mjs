@@ -19,7 +19,7 @@
  */
 
 // Load variables from `.env` into `process.env` so we can read keys and URLs.
-import "dotenv/config";
+import "./load-env.mjs";
 
 // Tool to turn a hex private key string into a viem `account` object (address + signing).
 import { privateKeyToAccount } from "viem/accounts";

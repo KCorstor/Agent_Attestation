@@ -8,7 +8,7 @@
  *
  * Docs: https://mpp.dev  |  Tempo: https://tempo.xyz
  */
-import "dotenv/config";
+import "./load-env.mjs";
 import express from "express";
 import { Mppx, tempo } from "mppx/express";
 

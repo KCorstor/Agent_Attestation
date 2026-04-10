@@ -15,10 +15,10 @@
     "id": "agent_start",
     "runnable": true,
     "title": "Agent starts checkout",
-    "does": "The agent initiates and prints its setup (wallet, merchant URL, etc). It then issues a real mppx.fetch to the merchant. After the merchant's 402 response, the agent builds a bundle with the details of the transaction that it would send out to auction for lenders to bid on. In this demo it's just written to disk as a stand-in cdecision on the transaction."
+    "does": "The agent initiates and prints its setup (wallet, merchant URL, etc). It then issues a real mppx.fetch to the merchant. After the merchant's 402 response, the agent builds a bundle with the details of the transaction that it would send out to auction for lenders to bid on. In this demo it's just written to disk as a stand-in decision on the transaction."
   },
   {
-    "id": "Bundle Built",
+    "id": "checkout_402",
     "runnable": false,
     "title": "402 + payment bundle (agent)",
     "does": "When mppx invokes onChallenge after the 402, the agent calls buildPaymentBundle, then onBundle runs — this demo phase is that instant (event + optional write to demo-ui-bundle.json), not a second assembly step. The bundle JSON combines the parsed MPP Payment challenge (what to pay — amount, asset, recipient, challenge identifiers, chain context, etc.) with HTTP context (request URL/method, WWW-Authenticate / Payment material). In production you would POST or queue that payload to an auction or credit desk; the file here simulates that handoff.",

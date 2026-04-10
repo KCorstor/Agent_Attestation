@@ -11,7 +11,7 @@ The agent matches that: **`tempo.charge({ account })`**, not the full client **`
 ## Prerequisites
 
 - **Node.js 22+** (recommended; `mppx` may warn on older Node)
-- **`mpp_tempo_example/.env`** with at least **`MPP_SECRET_KEY`**, **`TEMPO_PRIVATE_KEY`**, **`TEMPO_RECIPIENT_ADDRESS`**, and **`MPP_AUCTION_TERMS_FILE`** (see **`.env.example`**). The payer wallet should hold testnet **pathUSD** on **Moderato**.
+- **Repo-root `Agent_Attestation/.env`** (loaded via **`load-env.mjs`**) with at least **`MPP_SECRET_KEY`**, **`TEMPO_PRIVATE_KEY`**, **`TEMPO_RECIPIENT_ADDRESS`**, and **`MPP_AUCTION_TERMS_FILE`** (see **`demo-ui/.env.example`** for key names). The payer wallet should hold testnet **pathUSD** on **Moderato**.
 - Nothing from Stripe
 
 ## Setup and run
@@ -21,7 +21,7 @@ cd mpp_tempo_example
 npm install
 ```
 
-Ensure **`.env`** is filled (copy from **`.env.example`** if needed). Then:
+Ensure **repo-root `.env`** is filled. Then:
 
 **Terminal 1 — server**
 
@@ -108,7 +108,7 @@ npm run wallet:setup
 
 Or: `node setup-wallet.mjs`
 
-That creates/updates **`.env`** with **`MPP_SECRET_KEY`**, **`TEMPO_PRIVATE_KEY`**, **`TEMPO_ADDRESS`**, **`TEMPO_RECIPIENT_ADDRESS`**, and hits the **Moderato faucet** when it creates a new key. You do **not** need to run this every time — **`.env`** is the source of truth (gitignored; back it up locally).
+That creates/updates **repo-root `.env`** with **`MPP_SECRET_KEY`**, **`TEMPO_PRIVATE_KEY`**, **`TEMPO_ADDRESS`**, **`TEMPO_RECIPIENT_ADDRESS`**, and hits the **Moderato faucet** when it creates a new key. You do **not** need to run this every time — that **`.env`** is the source of truth (gitignored; back it up locally).
 
 - **Top up testnet funds:** `npm run wallet:setup -- --fund`
 - **New key (destructive):** `npm run wallet:setup -- --force`
@@ -120,7 +120,7 @@ That creates/updates **`.env`** with **`MPP_SECRET_KEY`**, **`TEMPO_PRIVATE_KEY`
 ### Troubleshooting `wallet:setup`
 
 1. Run **inside** **`mpp_tempo_example/`** — there is no `wallet:setup` at the repo root.
-2. Check the path printed as `setup-wallet: writing …` — it must be **`mpp_tempo_example/.env`**.
+2. Check the path printed as `setup-wallet: writing …` — it must be **`Agent_Attestation/.env`** (repo root).
 3. Faucet needs network; if it fails, the key may still be written — use **`--fund`** later.
 
 ## Amount encoding

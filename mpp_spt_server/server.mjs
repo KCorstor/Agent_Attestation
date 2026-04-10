@@ -13,7 +13,7 @@
  *
  * Probe: curl -i http://127.0.0.1:4242/paid
  */
-import "dotenv/config";
+import "./load-env.mjs";
 import express from "express";
 import { Mppx, stripe } from "mppx/express";
 import Stripe from "stripe";

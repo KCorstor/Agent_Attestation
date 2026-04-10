@@ -12,14 +12,7 @@
     />
     <link rel="stylesheet" href="./styles.css" />
     <style>
-      /* flow.html — matches index layout tokens; hero ghost buttons on dark gradient */
-      .hero .flow-hero-actions .btn--ghost {
-        color: #fff;
-        border-color: rgba(255, 255, 255, 0.42);
-      }
-      .hero .flow-hero-actions .btn--ghost:hover {
-        background: rgba(255, 255, 255, 0.1);
-      }
+      /* flow.html — hero primary button on dark gradient */
       .hero .flow-hero-actions a.btn--primary {
         text-decoration: none;
         display: inline-flex;
@@ -30,62 +23,6 @@
       .layout--flow {
         grid-template-columns: 1fr;
         max-width: min(1180px, 96vw);
-      }
-
-      .flow-legend {
-        display: grid;
-        gap: 1rem;
-        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-      }
-      .flow-card {
-        background: var(--steps-panel-bg);
-        border: 1px solid var(--steps-panel-edge);
-        border-radius: var(--radius);
-        padding: 1rem 1.15rem;
-        box-shadow: 0 1px 2px rgba(15, 37, 64, 0.04);
-      }
-      .flow-card h3 {
-        margin: 0 0 0.5rem;
-        font-size: 0.72rem;
-        font-weight: 600;
-        letter-spacing: 0.06em;
-        text-transform: uppercase;
-        color: var(--ink);
-      }
-      .flow-card p {
-        margin: 0;
-        font-size: 0.88rem;
-        color: var(--muted);
-        line-height: 1.45;
-      }
-
-      .flow-back {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.35rem;
-        margin-bottom: 1rem;
-        font-size: 0.9rem;
-        font-weight: 600;
-        color: var(--accent);
-        text-decoration: none;
-      }
-      .flow-back:hover {
-        text-decoration: underline;
-      }
-      .flow-intro-title {
-        font-size: clamp(1.35rem, 3vw, 1.75rem);
-        font-weight: 600;
-        color: var(--ink);
-        margin: 0 0 0.5rem;
-        letter-spacing: -0.02em;
-        line-height: 1.2;
-      }
-      .flow-lead {
-        color: var(--muted);
-        margin: 0 0 1.5rem;
-        max-width: 62ch;
-        line-height: 1.55;
-        font-size: 1.02rem;
       }
 
       .flow-mermaid-wrap {
@@ -123,30 +60,12 @@
           <h1 class="hero__title">How the checkout demo fits together</h1>
           <div class="hero__actions flow-hero-actions">
             <a class="btn btn--primary" href="./index.html">Open live demo</a>
-            <a class="btn btn--ghost" href="./index.html" style="text-decoration: none">← Back to checkout UI</a>
           </div>
         </div>
       </header>
 
       <main class="layout layout--flow">
-        <section class="panel panel--detail" aria-labelledby="flow-mermaid-title">
-          <a class="flow-back" href="./index.html">← Back to live demo</a>
-
-          <h2 id="flow-intro" class="flow-intro-title">One browser click → one real <code>agent.mjs</code> process</h2>
-          <p class="flow-lead">
-            <strong>demo_dashboard.mjs</strong> orchestrates reset, the merchant server, and the mock lender script.
-            <strong>agent.mjs</strong> alone performs HTTP 402 handling, builds the payment bundle, waits for terms, signs with
-            Tempo, and completes the paid GET. The UI streams phases over SSE so you can narrate the story slide-by-slide.
-          </p>
-
-          <div class="panel__head" style="margin-top: 0.5rem">
-            <h2 id="flow-mermaid-title" class="panel__title">End-to-end flow</h2>
-            <span class="badge">Mermaid</span>
-          </div>
-          <p class="detail-text" style="margin-bottom: 0.75rem">
-            Message order for one <strong>Run all steps</strong> (or after you run reset → server → agent in order). Open arrows are requests; dashed return lines are responses,
-            stdout signals, or SSE back to the browser. Scroll inside the frame if the diagram is larger than your viewport.
-          </p>
+        <section class="panel panel--detail">
           <div class="flow-mermaid-wrap" role="region" aria-label="Checkout sequence diagram" tabindex="0">
             <pre class="mermaid">sequenceDiagram
   participant B as Browser
@@ -166,33 +85,9 @@
   A->>M: pay (Tempo) + retry GET
   M-->>A: 200 paid
   A-->>D: stdout paid
-  D-->>B: SSE events + UI updates</pre>
+  D-->>B: JSON response + UI refresh</pre>
           </div>
         </section>
-
-        <div class="flow-legend">
-          <div class="flow-card">
-            <h3>Why two processes plus the agent?</h3>
-            <p>
-              <strong>server.mjs</strong> is the merchant (402 + paid resource). <strong>demo_dashboard.mjs</strong> is only the
-              demo conductor: reset, start merchant, spawn agent, run mock release when the agent has emitted the bundle.
-            </p>
-          </div>
-          <div class="flow-card">
-            <h3>What is “real”?</h3>
-            <p>
-              HTTP 402, MPP challenge parsing, Tempo signing, and retry are real <strong>mppx</strong> behavior. “Lender” terms are
-              simulated by writing JSON to disk — a stand-in for webhook / queue / signed URL in production.
-            </p>
-          </div>
-          <div class="flow-card">
-            <h3>Copy &amp; steps in the UI</h3>
-            <p>
-              Phase titles and explanations are editable in <strong>demo-ui/steps.json</strong>. The live checklist mirrors agent +
-              orchestrator events from the stream.
-            </p>
-          </div>
-        </div>
       </main>
 
       <footer class="footer">

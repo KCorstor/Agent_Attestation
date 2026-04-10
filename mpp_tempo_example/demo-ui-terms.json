@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "capturedAt": "2026-04-09T20:41:06.154Z",
+  "capturedAt": "2026-04-10T00:05:42.447Z",
   "purpose": "mpp_payment_required_bundle_for_downstream_auction",
   "request": {
     "url": "http://127.0.0.1:4243/paid",
@@ -13,18 +13,18 @@
       "connection": "keep-alive",
       "content-length": "233",
       "content-type": "application/problem+json; charset=utf-8",
-      "date": "Thu, 09 Apr 2026 20:41:06 GMT",
-      "etag": "W/\"e9-cIkrC0cc8SrJMbKgCKxNzpGjeSQ\"",
+      "date": "Fri, 10 Apr 2026 00:05:42 GMT",
+      "etag": "W/\"e9-2EzLOeTEYxteDZKXaLezjy0TddY\"",
       "keep-alive": "timeout=5",
-      "www-authenticate": "Payment id=\"rKI9mvi5T7poKPgXlYd4VEKEGxviCtZ-EGcx5mJbvB4\", realm=\"127.0.0.1\", method=\"tempo\", intent=\"charge\", request=\"eyJhbW91bnQiOiIxMDAwMDAiLCJjdXJyZW5jeSI6IjB4MjBjMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMCIsIm1ldGhvZERldGFpbHMiOnsiY2hhaW5JZCI6NDI0MzF9LCJyZWNpcGllbnQiOiIweEU4QzBERDJDRjc1NWJEOTBENGVhNUYyZjJEYTFkODdlOTBBYjY1YzkifQ\", description=\"MPP Tempo demo - 0.1 pathUSD (testnet)\", expires=\"2026-04-09T20:46:06.148Z\"",
+      "www-authenticate": "Payment id=\"F5AHSoUJ0_je6MJM_u3guUQdl3bFmgidga9f2Guc3hY\", realm=\"127.0.0.1\", method=\"tempo\", intent=\"charge\", request=\"eyJhbW91bnQiOiIxMDAwMDAiLCJjdXJyZW5jeSI6IjB4MjBjMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMCIsIm1ldGhvZERldGFpbHMiOnsiY2hhaW5JZCI6NDI0MzF9LCJyZWNpcGllbnQiOiIweEU4QzBERDJDRjc1NWJEOTBENGVhNUYyZjJEYTFkODdlOTBBYjY1YzkifQ\", description=\"MPP Tempo demo - 0.1 pathUSD (testnet)\", expires=\"2026-04-10T00:10:42.441Z\"",
       "x-powered-by": "Express"
     },
-    "wwwAuthenticate": "Payment id=\"rKI9mvi5T7poKPgXlYd4VEKEGxviCtZ-EGcx5mJbvB4\", realm=\"127.0.0.1\", method=\"tempo\", intent=\"charge\", request=\"eyJhbW91bnQiOiIxMDAwMDAiLCJjdXJyZW5jeSI6IjB4MjBjMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMCIsIm1ldGhvZERldGFpbHMiOnsiY2hhaW5JZCI6NDI0MzF9LCJyZWNpcGllbnQiOiIweEU4QzBERDJDRjc1NWJEOTBENGVhNUYyZjJEYTFkODdlOTBBYjY1YzkifQ\", description=\"MPP Tempo demo - 0.1 pathUSD (testnet)\", expires=\"2026-04-09T20:46:06.148Z\""
+    "wwwAuthenticate": "Payment id=\"F5AHSoUJ0_je6MJM_u3guUQdl3bFmgidga9f2Guc3hY\", realm=\"127.0.0.1\", method=\"tempo\", intent=\"charge\", request=\"eyJhbW91bnQiOiIxMDAwMDAiLCJjdXJyZW5jeSI6IjB4MjBjMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMCIsIm1ldGhvZERldGFpbHMiOnsiY2hhaW5JZCI6NDI0MzF9LCJyZWNpcGllbnQiOiIweEU4QzBERDJDRjc1NWJEOTBENGVhNUYyZjJEYTFkODdlOTBBYjY1YzkifQ\", description=\"MPP Tempo demo - 0.1 pathUSD (testnet)\", expires=\"2026-04-10T00:10:42.441Z\""
   },
   "challenge": {
     "description": "MPP Tempo demo - 0.1 pathUSD (testnet)",
-    "expires": "2026-04-09T20:46:06.148Z",
-    "id": "rKI9mvi5T7poKPgXlYd4VEKEGxviCtZ-EGcx5mJbvB4",
+    "expires": "2026-04-10T00:10:42.441Z",
+    "id": "F5AHSoUJ0_je6MJM_u3guUQdl3bFmgidga9f2Guc3hY",
     "intent": "charge",
     "method": "tempo",
     "realm": "127.0.0.1",
@@ -37,11 +37,11 @@
       "recipient": "0xE8C0DD2CF755bD90D4ea5F2f2Da1d87e90Ab65c9"
     }
   },
-  "wwwAuthenticateSerialized": "Payment id=\"rKI9mvi5T7poKPgXlYd4VEKEGxviCtZ-EGcx5mJbvB4\", realm=\"127.0.0.1\", method=\"tempo\", intent=\"charge\", request=\"eyJhbW91bnQiOiIxMDAwMDAiLCJjdXJyZW5jeSI6IjB4MjBjMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMCIsIm1ldGhvZERldGFpbHMiOnsiY2hhaW5JZCI6NDI0MzF9LCJyZWNpcGllbnQiOiIweEU4QzBERDJDRjc1NWJEOTBENGVhNUYyZjJEYTFkODdlOTBBYjY1YzkifQ\", description=\"MPP Tempo demo - 0.1 pathUSD (testnet)\", expires=\"2026-04-09T20:46:06.148Z\"",
+  "wwwAuthenticateSerialized": "Payment id=\"F5AHSoUJ0_je6MJM_u3guUQdl3bFmgidga9f2Guc3hY\", realm=\"127.0.0.1\", method=\"tempo\", intent=\"charge\", request=\"eyJhbW91bnQiOiIxMDAwMDAiLCJjdXJyZW5jeSI6IjB4MjBjMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMCIsIm1ldGhvZERldGFpbHMiOnsiY2hhaW5JZCI6NDI0MzF9LCJyZWNpcGllbnQiOiIweEU4QzBERDJDRjc1NWJEOTBENGVhNUYyZjJEYTFkODdlOTBBYjY1YzkifQ\", description=\"MPP Tempo demo - 0.1 pathUSD (testnet)\", expires=\"2026-04-10T00:10:42.441Z\"",
   "mockAuction": {
-    "auctionId": "mock-auction-1775767266191",
+    "auctionId": "mock-auction-1775779542479",
     "status": "cleared_for_issuance",
-    "settledAt": "2026-04-09T20:41:06.191Z",
+    "settledAt": "2026-04-10T00:05:42.479Z",
     "note": "Replace with real auction result payload when wired up."
   },
   "mockBank": {
@@ -62,7 +62,7 @@
     }
   },
   "integration": {
-    "mppChallengeId": "rKI9mvi5T7poKPgXlYd4VEKEGxviCtZ-EGcx5mJbvB4",
+    "mppChallengeId": "F5AHSoUJ0_je6MJM_u3guUQdl3bFmgidga9f2Guc3hY",
     "nextStep": "To finish the HTTP transaction on-device, call the mppx `createCredential` path with the original 402 challenge (see agent.mjs onChallenge). Mock bank terms are parallel metadata until you implement issuer-driven credentials."
   }
 }

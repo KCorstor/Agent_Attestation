@@ -84,7 +84,7 @@
  * Run:  npm run agent
  *   or  MPP_PAID_URL=http://127.0.0.1:4242/paid npm run agent
  */
-import "dotenv/config";
+import "./load-env.mjs";
 import Stripe from "stripe";
 import { Mppx, stripe as stripeMethod } from "mppx/client";
 import { describeMockSptConfig, mockSptConfigFromEnv } from "./mock_spt_env.mjs";

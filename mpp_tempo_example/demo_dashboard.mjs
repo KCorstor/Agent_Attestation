@@ -5,9 +5,10 @@
  *   node demo_dashboard.mjs
  * Open http://127.0.0.1:3333
  */
-import "dotenv/config";
+import "./load-env.mjs";
 import { spawn } from "node:child_process";
 import { access, readFile, unlink } from "node:fs/promises";
+import http from "node:http";
 import { createInterface } from "node:readline";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -57,6 +58,33 @@ function fail(stepId, message) {
   stepResults[stepId] = { ok: false, error: message, at: new Date().toISOString() };
 }
 
+/** Loopback probe without `fetch` (avoids generic “fetch failed” / proxy quirks on 127.0.0.1). */
+function httpGetLocal(urlStr) {
+  return new Promise((resolve, reject) => {
+    const u = new URL(urlStr);
+    const port = u.port ? Number(u.port) : u.protocol === "https:" ? 443 : 80;
+    const req = http.request(
+      {
+        hostname: u.hostname,
+        port,
+        path: `${u.pathname}${u.search}`,
+        method: "GET",
+        timeout: 10_000,
+      },
+      (res) => {
+        res.resume();
+        resolve(res);
+      },
+    );
+    req.on("error", reject);
+    req.on("timeout", () => {
+      req.destroy();
+      reject(new Error("connect timeout"));
+    });
+    req.end();
+  });
+}
+
 async function stepReset() {
   if (agentProcess && !agentProcess.killed) {
     try {
@@ -82,16 +110,59 @@ async function stepStartServer() {
   if (serverProcess) {
     throw new Error("Demo server already running. Run Reset first.");
   }
+  let serverStderr = "";
+  let serverStdout = "";
   serverProcess = spawn(process.execPath, ["server.mjs"], {
     cwd: ROOT,
     env: { ...process.env },
-    stdio: "ignore",
+    stdio: ["ignore", "pipe", "pipe"],
   });
-  await new Promise((r) => setTimeout(r, 1200));
-  const probe = await fetch(PAID_URL, { method: "GET" }).catch((e) => {
-    throw new Error(`Cannot reach ${PAID_URL}: ${e.message}`);
+  serverProcess.stdout?.on("data", (c) => {
+    serverStdout += c.toString();
+    if (serverStdout.length > 4000) serverStdout = serverStdout.slice(-4000);
   });
-  stamp("start-server", { listening: true, url: PAID_URL, probeStatus: probe.status });
+  serverProcess.stderr?.on("data", (c) => {
+    serverStderr += c.toString();
+    if (serverStderr.length > 4000) serverStderr = serverStderr.slice(-4000);
+  });
+  await new Promise((r) => setTimeout(r, 300));
+  let probe;
+  let lastErr = "";
+  for (let i = 0; i < 30; i++) {
+    if (serverProcess.exitCode != null && serverProcess.exitCode !== 0) {
+      throw new Error(
+        `server.mjs exited ${serverProcess.exitCode}: ${serverStderr.trim() || "check .env (MPP_SECRET_KEY, TEMPO_RECIPIENT_ADDRESS)"}`,
+      );
+    }
+    try {
+      probe = await httpGetLocal(PAID_URL);
+      break;
+    } catch (e) {
+      const err = /** @type {NodeJS.ErrnoException} */ (e);
+      const code = err.code ? ` [${err.code}]` : "";
+      lastErr = `${err.message || String(e)}${code}`;
+    }
+    await new Promise((r) => setTimeout(r, 250));
+  }
+  if (!probe) {
+    if (serverProcess.exitCode != null && serverProcess.exitCode !== 0) {
+      throw new Error(
+        `server.mjs exited ${serverProcess.exitCode}: ${serverStderr.trim() || lastErr}`,
+      );
+    }
+    const hint =
+      lastErr.includes("ECONNREFUSED") || lastErr.includes("EADDRINUSE")
+        ? " Another process may be using this PORT, or server.mjs failed before listen()."
+        : "";
+    const out = serverStdout.trim();
+    const err = serverStderr.trim();
+    const logHint =
+      err || out
+        ? ` Output: ${out ? `${out.slice(0, 800)}${out.length > 800 ? "…" : ""}` : ""}${err ? ` | Errors: ${err.slice(0, 800)}${err.length > 800 ? "…" : ""}` : ""}`
+        : "";
+    throw new Error(`Cannot reach ${PAID_URL}: ${lastErr || "no response"}.${hint}${logHint}`);
+  }
+  stamp("start-server", { listening: true, url: PAID_URL, probeStatus: probe.statusCode });
   return stepResults["start-server"].output;
 }
 
@@ -206,7 +277,6 @@ async function runAgentCheckoutPipeline() {
 
 const app = express();
 app.use(express.json());
-app.use(express.static(join(ROOT, "demo-ui")));
 
 app.get("/api/meta", async (_req, res) => {
   const raw = await readFile(join(ROOT, "demo-ui", "steps.json"), "utf8");
@@ -275,7 +345,9 @@ app.post("/api/run-all", async (_req, res) => {
   }
 });
 
+app.use(express.static(join(ROOT, "demo-ui")));
+
 const port = Number(process.env.DEMO_UI_PORT || 3333);
-app.listen(port, "127.0.0.1", () => {
+app.listen(port, () => {
   console.log(`MPP demo dashboard → http://127.0.0.1:${port}`);
 });
