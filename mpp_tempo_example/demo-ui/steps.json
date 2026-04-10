@@ -1,77 +1,61 @@
 [
   {
+    "id": "auction_gate",
+    "runnable": false,
+    "informational": true,
+    "title": "Auction gate",
+    "listDetail": "gate.fetch + gate.onChallenge → mppx",
+    "detailLabel": "How it works",
+    "does": "An agent integrates the Attestr auction gate by passing two things into mppx: gate.fetch and gate.onChallenge. You do not modify mppx itself.\n\ngate.fetch is the HTTP entry point mppx uses. It records the last 402 response so a full payment bundle (challenge + HTTP context) can be assembled and sent to an auction or saved for review.\n\ngate.onChallenge runs after a 402: it builds the bundle, and waits until terms are acceptable (in the demo: a JSON file stands in for a winning and accepted auction quote), then mppx continues and pays using the methods you pass in (same wallet here; production might route funds differently).\n\nIntegration is one call: Mppx.create({ fetch: gate.fetch, onChallenge: gate.onChallenge, methods: [...] }).\n\nThis demo is just for a Tempo integration, as we still don't have access to credit card/SPT processing from Stripe.",
+    "snippets": [
+      {
+        "file": "agent.mjs — plug the gate into Mppx.create",
+        "code": "const mppx = Mppx.create({\n  polyfill: false,\n  fetch: gate.fetch,\n  methods: [tempo.charge({ account })],\n  onChallenge: gate.onChallenge,\n});"
+      },
+      {
+        "file": "auction_gate.mjs — createAuctionGate returns gate.fetch + gate.onChallenge",
+        "code": "const { fetch, getLast402, clearLast402 } = createCapture402Fetch(underlyingFetch);\n\nasync function onChallenge(challenge, _helpers) {\n  const bundle = buildPaymentBundle({\n    challenge,\n    capture402: getLast402(),\n  });\n\n  if (onBundle) await onBundle(bundle);\n\n  if (waitForTerms) {\n    const terms = await waitForTerms(bundle);\n    if (onTerms) await onTerms(bundle, terms);\n  }\n\n  return undefined;\n}\n\nreturn { fetch, getLast402, clearLast402, onChallenge };"
+      },
+      {
+        "file": "payment_bundle.mjs — createCapture402Fetch (how gate.fetch remembers the last 402)",
+        "code": "export function createCapture402Fetch(underlying = globalThis.fetch) {\n  let last = null;\n\n  async function wrapped(input, init) {\n    const requestUrl =\n      typeof input === \"string\"\n        ? input\n        : input instanceof URL\n          ? input.href\n          : input.url;\n    const res = await underlying(input, init);\n    if (res.status === 402) {\n      const headers = Object.fromEntries(res.headers.entries());\n      last = {\n        requestUrl,\n        requestMethod: (init?.method ?? \"GET\").toUpperCase(),\n        status: res.status,\n        headers,\n        wwwAuthenticate: res.headers.get(\"WWW-Authenticate\"),\n      };\n    }\n    return res;\n  }\n\n  return {\n    fetch: wrapped,\n    getLast402: () => last,\n    clearLast402: () => { last = null; },\n  };\n}"
+      }
+    ]
+  },
+  {
     "id": "demo-setup",
     "runnable": false,
     "title": "Workspace + merchant server",
     "does": "The demo is initialized and prior run artifacts are cleared. The mock merchant server is started and the merchant's 'paid' endpoint is probed to ensure it's live."
   },
   {
-    "id": "auction_gate",
-    "runnable": false,
-    "informational": true,
-    "title": "Auction gate (overview)",
-    "listDetail": "Concepts",
-    "detailLabel": "Overview",
-    "does": "auction_gate.mjs is part of this Attstr payment demo integration in this repository—it wires the MPP Tempo agent (agent.mjs) to mppx’s 402/onChallenge flow and the “wait for auction terms” step. It is not from the mppx package; it is source code shipped with this demo.\n\nIt exports createAuctionGate, which builds what you pass into Mppx.create in agent.mjs:\n• gate.fetch — wraps fetch and keeps the last 402 response so it can be merged with the parsed challenge.\n• gate.onChallenge — the function you hand to mppx as onChallenge: gate.onChallenge.\n\nWhen mppx gets a 402, it calls that onChallenge. Inside it we: build the payment bundle, run onBundle (log / optional bundle file), await waitForTerms (in this demo: poll the terms JSON file until it is OK), run onTerms, then return undefined so mppx does its normal job: sign, pay, and retry the GET.\n\nYou don't change mppx's own files. You write your own onChallenge function and hand it to Mppx.create when you build the client."
-  },
-  {
-    "id": "gate_wiring",
-    "runnable": false,
-    "informational": true,
-    "title": "Auction gate in the agent",
-    "listDetail": "Code snippets",
-    "detailLabel": "Wiring",
-    "does": "In agent.mjs you call createAuctionGate({ ... }) once. It returns gate.fetch and gate.onChallenge. You pass those into Mppx.create together with tempo.charge—that is the whole hook-up (see below). You do not edit files inside the mppx package.\n\nThe first snippet is the onChallenge implementation inside createAuctionGate. The second snippet is where the agent plugs gate.fetch and gate.onChallenge into Mppx.create.",
-    "snippets": [
-      {
-        "file": "auction_gate.mjs (inside createAuctionGate)",
-        "code": "async function onChallenge(challenge, _helpers) {\n  const bundle = buildPaymentBundle({\n    challenge,\n    capture402: getLast402(),\n  });\n\n  if (onBundle) await onBundle(bundle);\n\n  if (waitForTerms) {\n    const terms = await waitForTerms(bundle);\n    if (onTerms) await onTerms(bundle, terms);\n  }\n\n  return undefined;\n}\n\nreturn { fetch, getLast402, clearLast402, onChallenge };"
-      },
-      {
-        "file": "agent.mjs",
-        "code": "const mppx = Mppx.create({\n  polyfill: false,\n  fetch: gate.fetch,\n  methods: [tempo.charge({ account })],\n  onChallenge: gate.onChallenge,\n});"
-      }
-    ]
-  },
-  {
     "id": "agent_start",
     "runnable": true,
     "title": "Agent starts checkout",
-    "does": "The agent initiates and prints its setup (wallet, merchant URL, etc). It then issues a real mppx.fetch to the merchant.\n\nIn production, bundleOut and termsFile will be the real terms from the merchant, and the bid/funds from the issuing bank. For this demo they are just initialized here in lieu of actual terms and an actual auction."
+    "does": "The agent initiates and prints its setup (wallet, merchant URL, etc). It then issues a real mppx.fetch to the merchant.\n\nIn production, bundleOut will be the transaction terms from the merchant along with the agent/sponsor's identity. termsFile is the bid/funds from the issuing bank. For this demo they are just initialized here in lieu of actual identity and auction."
   },
   {
     "id": "checkout_402",
     "runnable": false,
     "title": "402 + payment bundle (agent)",
-    "does": "When mppx invokes onChallenge after the 402, the agent calls buildPaymentBundle, then onBundle runs — this demo phase is that instant (event + optional write to demo-ui-bundle.json), not a second assembly step. The bundle JSON combines the parsed MPP Payment challenge (what to pay — amount, asset, recipient, challenge identifiers, chain context, etc.) with HTTP context (request URL/method, WWW-Authenticate / Payment material). In production you would POST or queue that payload to an auction or credit desk; the file here simulates that handoff.",
-    "doesNot": "Does not pay yet; waitForTerms runs next in the same agent process."
+    "does": "This shows the moment the agent has a 402 and has built the payment bundle of the parsed payment challenge (what the merchant is asking for: amount, asset, recipient, challenge id, chain context, etc.), plus HTTP context from the 402 (URL, method, headers / WWW-Authenticate). In production this would also include an agent or sponsor's identity/credit history"
   },
   {
     "id": "waiting_terms",
     "runnable": false,
     "title": "Wait for lender / auction terms (agent)",
-    "does": "The agent polls MPP_AUCTION_TERMS_FILE until the file exists, parses as JSON, and defaultAcceptTerms returns proceed (not pending/rejected). Those terms are mock data in this repo; in a real system they would be the deal terms returned when an auction selects a winning bid (or the equivalent from your lender flow).",
-    "doesNot": "Does not contact a real auction service — the file is supplied locally in the next phase."
-  },
-  {
-    "id": "lender_terms_written",
-    "runnable": false,
-    "title": "Mock lender delivers terms (orchestrator)",
-    "does": "After checkout_402, the dashboard runs release_mock_auction.mjs (same as npm run auction:release for these paths): it reads the saved payment bundle and writes demo-ui-terms.json with mock auction/bank fields. That simulates the winning bid’s terms arriving from the auction side through whatever channel you use in production — webhook, queue, signed URL, etc.",
-    "doesNot": "This step is not inside agent.mjs; it unblocks the polling the agent is already doing."
+    "does": "The agent polls MPP_AUCTION_TERMS_FILE until the file exists, parses as JSON, and the defaultAcceptTerms returns proceed (not wait/abort). In production MPP_AUCTION_TERMS_FILE is the terms returned when an auction selects a winning bid."
   },
   {
     "id": "terms_accepted",
     "runnable": false,
-    "title": "Terms accepted (agent)",
-    "does": "After mock terms parse and pass defaultAcceptTerms (e.g. mockAuction.status cleared_for_issuance), the agent logs them. mppx then builds the Tempo credential from the original merchant Payment challenge — the terms JSON gates whether paying is allowed; it is not merged into the cryptographic payment proof.",
-    "doesNot": "Mock bank JSON is not the cryptographic credential; settlement follows the protocol challenge."
+    "title": "Lender / auction terms accepted (agent)",
+    "does": "In production, terms from the winning bid or issuing bank reach the agent through Attestr integration. The agent only continues to pay when the accept policy allows it—in this repo, defaultAcceptTerms on the parsed terms JSON must return proceed. Those terms gate payment; mppx still settles against the merchant’s original Payment challenge, and the terms are not yet merged into the cryptographic proof."
   },
   {
     "id": "paid",
     "runnable": false,
     "title": "Paid + final HTTP result (agent)",
-    "does": "Emitted after the retried GET returns: HTTP status, Payment-Receipt header if present, and a short body preview. Same agent.mjs process end-to-end.",
-    "doesNot": "Does not represent mainnet or a real issuer — Moderato / demo server only."
+    "does": "In agent.mjs, one call to mppx.fetch(paidUrl) finishes: mppx has already handled 402, payment, and the follow-up request with credentials. The agent then reads the final Response status, optional Payment-Receipt header, and response body, and emits a paid demo event with that snapshot."
   }
 ]

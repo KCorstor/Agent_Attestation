@@ -1,5 +1,6 @@
 const stepsList = document.getElementById("stepsList");
 const jsonOut = document.getElementById("jsonOut");
+const jsonPayloadBlock = document.getElementById("jsonPayloadBlock");
 const runAllBtn = document.getElementById("runAllBtn");
 const detailActions = document.getElementById("detailActions");
 const runSelectedStepBtn = document.getElementById("runSelectedStepBtn");
@@ -51,7 +52,7 @@ function renderStepList() {
           : "Not yet in this session";
     li.dataset.index = String(i);
     li.innerHTML = `
-      <span class="step__idx">${i + 1}</span>
+      <span class="step__idx">${i}</span>
       <div class="step__body">
         <p class="step__title">${escapeHtml(m.title)}</p>
         <p class="step__detail">${sub}</p>
@@ -109,11 +110,10 @@ function renderDetail() {
   `;
 
   const sr = stepResults[m.id];
+  if (jsonPayloadBlock) {
+    jsonPayloadBlock.hidden = m.informational === true;
+  }
   if (m.informational === true) {
-    showJson({
-      message:
-        "This row is an overview only. It does not emit JSON from a run—read the explanation above.",
-    });
     return;
   }
 

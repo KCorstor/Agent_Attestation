@@ -39,7 +39,6 @@ const CHECKOUT_STEPS = [
   "agent_start",
   "checkout_402",
   "waiting_terms",
-  "lender_terms_written",
   "terms_accepted",
   "paid",
 ];
@@ -260,13 +259,25 @@ async function runAgentCheckoutPipeline() {
         }
         const step = payload.step;
         if (typeof step === "string") {
-          stamp(step, payload);
+          if (step === "terms_accepted") {
+            const prev = stepResults["terms_accepted"]?.output;
+            stamp("terms_accepted", {
+              ...(prev && typeof prev === "object" ? prev : {}),
+              ...payload,
+            });
+          } else {
+            stamp(step, payload);
+          }
         }
 
         if (step === "checkout_402" && !released) {
           released = true;
           const out = await runReleaseMockAuction();
-          stamp("lender_terms_written", out);
+          const prev = stepResults["terms_accepted"]?.output;
+          stamp("terms_accepted", {
+            ...(prev && typeof prev === "object" ? prev : {}),
+            delivered: out,
+          });
         }
       });
     });
