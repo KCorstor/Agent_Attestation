@@ -4,7 +4,6 @@
     "runnable": false,
     "informational": true,
     "title": "Auction gate",
-    "listDetail": "gate.fetch + gate.onChallenge → mppx",
     "detailLabel": "How it works",
     "does": "An agent integrates the Attestr auction gate by passing two things into mppx: gate.fetch and gate.onChallenge. You do not modify mppx itself.\n\ngate.fetch is the HTTP entry point mppx uses. It records the last 402 response so a full payment bundle (challenge + HTTP context) can be assembled and sent to an auction or saved for review.\n\ngate.onChallenge runs after a 402: it builds the bundle, and waits until terms are acceptable (in the demo: a JSON file stands in for a winning and accepted auction quote), then mppx continues and pays using the methods you pass in (same wallet here; production might route funds differently).\n\nIntegration is one call: Mppx.create({ fetch: gate.fetch, onChallenge: gate.onChallenge, methods: [...] }).\n\nThis demo is just for a Tempo integration, as we still don't have access to credit card/SPT processing from Stripe.",
     "snippets": [
@@ -38,19 +37,19 @@
     "id": "checkout_402",
     "runnable": false,
     "title": "402 + payment bundle (agent)",
-    "does": "This shows the moment the agent has a 402 and has built the payment bundle of the parsed payment challenge (what the merchant is asking for: amount, asset, recipient, challenge id, chain context, etc.), plus HTTP context from the 402 (URL, method, headers / WWW-Authenticate). In production this would also include an agent or sponsor's identity/credit history"
+    "does": "This shows the moment the merchant responds with HTTP 402 (Payment Required) and the agent has built a bundle from the parsed payment challenge (what the merchant is asking for: amount, asset, recipient, challenge id, chain context, etc.), plus HTTP context from that response (URL, method, headers / WWW-Authenticate). In production this would also include an agent or sponsor's identity/credit history"
   },
   {
     "id": "waiting_terms",
     "runnable": false,
     "title": "Wait for lender / auction terms (agent)",
-    "does": "The agent polls MPP_AUCTION_TERMS_FILE until the file exists, parses as JSON, and the defaultAcceptTerms returns proceed (not wait/abort). In production MPP_AUCTION_TERMS_FILE is the terms returned when an auction selects a winning bid."
+    "does": "The agent polls MPP_AUCTION_TERMS_FILE until the file exists, parses as JSON, and the defaultAcceptTerms returns proceed (not wait/abort). In production MPP_AUCTION_TERMS_FILE is the terms returned when an auction selects a winning bid. This structure is just a placeholder for however the terms will actually be delivered."
   },
   {
     "id": "terms_accepted",
     "runnable": false,
     "title": "Lender / auction terms accepted (agent)",
-    "does": "In production, terms from the winning bid or issuing bank reach the agent through Attestr integration. The agent only continues to pay when the accept policy allows it—in this repo, defaultAcceptTerms on the parsed terms JSON must return proceed. Those terms gate payment; mppx still settles against the merchant’s original Payment challenge, and the terms are not yet merged into the cryptographic proof."
+    "does": "Terms from the winning bid or issuing bank reach the agent or some kind of intermediary (TBD). The agent only continues to pay when the accept policy allows it. In this repo, defaultAcceptTerms on the parsed terms JSON must return 'proceed'. Those terms gate payment; mppx still settles against the merchant’s original Payment challenge."
   },
   {
     "id": "paid",

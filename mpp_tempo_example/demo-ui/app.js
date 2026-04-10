@@ -43,19 +43,11 @@ function renderStepList() {
     if (i === selectedIndex) li.classList.add("step--active");
     const ran = Boolean(stepResults[m.id]?.ok || stepResults[m.id]?.error);
     if (ran) li.classList.add("step--done");
-    const sub = m.listDetail
-      ? m.listDetail
-      : m.informational === true
-        ? "How the code fits together"
-        : ran
-          ? "Captured in last run"
-          : "Not yet in this session";
     li.dataset.index = String(i);
     li.innerHTML = `
       <span class="step__idx">${i}</span>
       <div class="step__body">
         <p class="step__title">${escapeHtml(m.title)}</p>
-        <p class="step__detail">${sub}</p>
       </div>
     `;
     li.addEventListener("click", () => {
