@@ -16,12 +16,11 @@
     <div class="page">
       <header class="hero">
         <div class="hero__inner">
-          <p class="hero__eyebrow">Machine Payments Protocol · Tempo · mppx</p>
+          <p class="hero__eyebrow">Machine Payments Protocol · Tempo</p>
           <h1 class="hero__title">Attstr Payment Demo Flow</h1>
           <div class="hero__actions">
             <button type="button" class="btn btn--primary" id="runAllBtn">Run all steps</button>
             <a class="btn btn--primary" href="./flow.html" style="text-decoration: none; display: inline-flex; align-items: center; justify-content: center">Sequence diagram</a>
-            <button type="button" class="btn btn--primary" id="resetBtn">Reset</button>
           </div>
           <p class="hero__hint" id="statusHint"></p>
         </div>
@@ -39,12 +38,13 @@
           </div>
         </section>
 
-        <section class="panel panel--detail" aria-labelledby="detailHeading">
-          <div class="panel__head">
-            <h2 id="detailHeading" class="panel__title">Phase detail</h2>
-            <span class="badge" id="stepBadge">—</span>
-          </div>
+        <section class="panel panel--detail" aria-label="Selected phase">
           <div class="detail-meta" id="detailMeta"></div>
+          <div class="detail-actions" id="detailActions" hidden>
+            <button type="button" class="btn btn--primary" id="runSelectedStepBtn">
+              Run this step
+            </button>
+          </div>
           <h3 class="subhead">Last payload (JSON)</h3>
           <pre class="json" id="jsonOut"><code>// Run all steps or select a phase</code></pre>
         </section>

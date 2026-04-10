@@ -35,8 +35,7 @@ let agentProcess = null;
 const stepResults = {};
 
 const CHECKOUT_STEPS = [
-  "reset",
-  "start-server",
+  "demo-setup",
   "agent_start",
   "checkout_402",
   "waiting_terms",
@@ -45,8 +44,8 @@ const CHECKOUT_STEPS = [
   "paid",
 ];
 
-/** Steps the user can invoke via POST /api/step/:id */
-const RUNNABLE_STEP_IDS = new Set(["reset", "start-server", "agent_start"]);
+/** Steps the user can invoke via POST /api/step/:id (reset/start-server kept for older clients). */
+const RUNNABLE_STEP_IDS = new Set(["demo-setup", "agent_start", "reset", "start-server"]);
 
 let demoRunning = false;
 
@@ -108,7 +107,7 @@ async function stepReset() {
 
 async function stepStartServer() {
   if (serverProcess) {
-    throw new Error("Demo server already running. Run Reset first.");
+    throw new Error("Demo server already running. Use “Run all steps” to reset and restart cleanly.");
   }
   let serverStderr = "";
   let serverStdout = "";
@@ -166,6 +165,20 @@ async function stepStartServer() {
   return stepResults["start-server"].output;
 }
 
+/** Reset workspace + start merchant server (one UI phase). */
+async function stepDemoSetup() {
+  await stepReset();
+  await stepStartServer();
+  const out = {
+    workspace: stepResults.reset.output,
+    merchant: stepResults["start-server"].output,
+  };
+  delete stepResults.reset;
+  delete stepResults["start-server"];
+  stamp("demo-setup", out);
+  return out;
+}
+
 /** After agent wrote demo-ui-bundle.json — same script as manual `npm run auction:release` for this path. */
 async function runReleaseMockAuction() {
   try {
@@ -200,14 +213,14 @@ async function runReleaseMockAuction() {
 
 /**
  * Spawn agent.mjs (MPP_DEMO_EVENT=1); on checkout_402 run release_mock_auction; wait for exit.
- * Requires merchant server already up (start-server).
+ * Requires merchant server already up (after “Run all steps” or a prior setup).
  */
 async function runAgentCheckoutPipeline() {
   if (demoRunning) {
     throw new Error("A checkout run is already in progress.");
   }
   if (!serverProcess) {
-    throw new Error("Start the demo server first (run the “Start demo MPP Merchant checkout server” step).");
+    throw new Error("Merchant server is not running. Use “Run all steps” first (it starts the server).");
   }
 
   demoRunning = true;
@@ -277,6 +290,10 @@ async function runAgentCheckoutPipeline() {
 
 const app = express();
 app.use(express.json());
+app.use("/api", (_req, res, next) => {
+  res.set("Cache-Control", "no-store");
+  next();
+});
 
 app.get("/api/meta", async (_req, res) => {
   const raw = await readFile(join(ROOT, "demo-ui", "steps.json"), "utf8");
@@ -298,14 +315,16 @@ app.post("/api/step/:id", async (req, res) => {
   if (!RUNNABLE_STEP_IDS.has(id)) {
     res.status(400).json({
       ok: false,
-      error:
-        "This phase is recorded automatically when you run “Agent starts checkout” (it runs the full agent in one process).",
+      error: `Step “${id}” is not runnable from the API (only agent-driven phases). Runnable: demo-setup, agent_start.`,
     });
     return;
   }
   try {
     let output;
     switch (id) {
+      case "demo-setup":
+        output = await stepDemoSetup();
+        break;
       case "reset":
         output = await stepReset();
         break;
@@ -321,24 +340,27 @@ app.post("/api/step/:id", async (req, res) => {
     res.json({ ok: true, step: id, output });
   } catch (e) {
     const message = e instanceof Error ? e.message : String(e);
-    if (id === "reset" || id === "start-server") {
+    if (id === "demo-setup") {
+      fail("demo-setup", message);
+      delete stepResults.reset;
+      delete stepResults["start-server"];
+    } else if (id === "reset" || id === "start-server") {
       fail(id, message);
     }
     res.status(400).json({ ok: false, step: id, error: message, stepResults });
   }
 });
 
-/** Reset → start server → agent checkout (same as running those three steps in order). */
+/** Full demo: workspace + server (demo-setup) → agent checkout. */
 app.post("/api/run-all", async (_req, res) => {
   if (demoRunning) {
     res.status(429).json({ error: "Checkout demo already running" });
     return;
   }
   try {
-    await stepReset();
-    await stepStartServer();
+    await stepDemoSetup();
     const output = await runAgentCheckoutPipeline();
-    res.json({ ok: true, steps: ["reset", "start-server", "agent_start"], output });
+    res.json({ ok: true, steps: ["demo-setup", "agent_start"], output });
   } catch (e) {
     const message = e instanceof Error ? e.message : String(e);
     res.status(400).json({ ok: false, error: message, stepResults });

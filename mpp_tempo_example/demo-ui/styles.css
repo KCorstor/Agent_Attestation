@@ -221,14 +221,6 @@ code {
   min-width: min(100%, 320px);
 }
 
-.panel__head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: 0.75rem;
-}
-
 .panel__title {
   margin: 0 0 1rem;
   font-size: 0.8rem;
@@ -236,22 +228,6 @@ code {
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--ink);
-}
-
-.panel--detail .panel__title {
-  margin: 0;
-}
-
-.badge {
-  font-size: 0.7rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  padding: 0.25rem 0.6rem;
-  border-radius: 999px;
-  background: var(--surface);
-  color: var(--muted);
-  border: 1px solid var(--border);
 }
 
 .nav-row {
@@ -263,6 +239,10 @@ code {
 
 .detail-meta {
   margin-bottom: 1rem;
+}
+
+.detail-actions {
+  margin: 0 0 1rem;
 }
 
 .detail-title {
@@ -281,16 +261,50 @@ code {
   margin: 0.75rem 0 0.35rem;
 }
 
+.detail-label--file {
+  text-transform: none;
+  letter-spacing: 0.02em;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--ink);
+  margin-top: 1rem;
+}
+
+.detail-code {
+  margin: 0 0 0.75rem;
+  padding: 0.85rem 1rem;
+  background: #0d1117;
+  color: #e6edf3;
+  border-radius: 8px;
+  border: 1px solid #30363d;
+  font-size: 0.76rem;
+  line-height: 1.45;
+  overflow: auto;
+  max-height: min(42vh, 360px);
+}
+
+.detail-code code {
+  font-family: ui-monospace, "SFMono-Regular", Menlo, Monaco, monospace;
+  white-space: pre;
+  display: block;
+  background: transparent;
+  color: inherit;
+  padding: 0;
+  font-size: inherit;
+}
+
 .detail-text {
   margin: 0;
   font-size: 0.9rem;
   line-height: 1.5;
   color: var(--ink);
+  white-space: pre-line;
 }
 
 .detail-text--muted {
   color: var(--muted);
   font-size: 0.88rem;
+  white-space: pre-line;
 }
 
 .subhead {

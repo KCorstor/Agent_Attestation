@@ -1,14 +1,14 @@
 const stepsList = document.getElementById("stepsList");
 const jsonOut = document.getElementById("jsonOut");
 const runAllBtn = document.getElementById("runAllBtn");
-const resetBtn = document.getElementById("resetBtn");
+const detailActions = document.getElementById("detailActions");
+const runSelectedStepBtn = document.getElementById("runSelectedStepBtn");
 const prevBtn = document.getElementById("prevBtn");
 const nextBtn = document.getElementById("nextBtn");
 const statusHint = document.getElementById("statusHint");
 const detailMeta = document.getElementById("detailMeta");
-const stepBadge = document.getElementById("stepBadge");
 
-/** @type {{ id: string; title: string; does: string; doesNot?: string; runnable?: boolean }[]} */
+/** @type {{ id: string; title: string; does: string; doesNot?: string; runnable?: boolean; informational?: boolean; listDetail?: string; detailLabel?: string; snippets?: { file: string; code: string }[] }[]} */
 let meta = [];
 /** @type {Record<string, { ok: boolean; output?: unknown; error?: string; at: string }>} */
 let stepResults = {};
@@ -19,12 +19,12 @@ function isRunnable(m) {
 }
 
 async function loadMeta() {
-  const r = await fetch("/api/meta");
+  const r = await fetch("/api/meta", { cache: "no-store" });
   meta = await r.json();
 }
 
 async function loadState() {
-  const r = await fetch("/api/state");
+  const r = await fetch("/api/state", { cache: "no-store" });
   const s = await r.json();
   stepResults = s.stepResults || {};
 }
@@ -42,12 +42,19 @@ function renderStepList() {
     if (i === selectedIndex) li.classList.add("step--active");
     const ran = Boolean(stepResults[m.id]?.ok || stepResults[m.id]?.error);
     if (ran) li.classList.add("step--done");
+    const sub = m.listDetail
+      ? m.listDetail
+      : m.informational === true
+        ? "How the code fits together"
+        : ran
+          ? "Captured in last run"
+          : "Not yet in this session";
     li.dataset.index = String(i);
     li.innerHTML = `
       <span class="step__idx">${i + 1}</span>
       <div class="step__body">
         <p class="step__title">${escapeHtml(m.title)}</p>
-        <p class="step__detail">${ran ? "Captured in last run" : "Not yet in this session"}</p>
+        <p class="step__detail">${sub}</p>
       </div>
     `;
     li.addEventListener("click", () => {
@@ -72,27 +79,57 @@ function renderDetail() {
   const m = meta[selectedIndex];
   if (!m) return;
 
-  stepBadge.textContent = m.id;
+  const canRun = isRunnable(m);
+  if (detailActions) {
+    detailActions.hidden = !canRun;
+  }
+
   const notBlock =
     m.doesNot && m.doesNot.trim()
       ? `<p class="detail-label">What it does not do</p>
     <p class="detail-text detail-text--muted">${escapeHtml(m.doesNot)}</p>`
       : "";
+  const phaseLabel =
+    m.detailLabel ||
+    (m.informational === true ? "How it works" : "What happens in this phase");
+  const snippetsBlock = Array.isArray(m.snippets)
+    ? m.snippets
+        .map(
+          (s) =>
+            `<p class="detail-label detail-label--file">${escapeHtml(s.file)}</p><pre class="detail-code"><code>${escapeHtml(s.code)}</code></pre>`,
+        )
+        .join("")
+    : "";
   detailMeta.innerHTML = `
     <h3 class="detail-title">${escapeHtml(m.title)}</h3>
-    <p class="detail-label">What happens in this phase</p>
+    <p class="detail-label">${escapeHtml(phaseLabel)}</p>
     <p class="detail-text">${escapeHtml(m.does)}</p>
+    ${snippetsBlock}
     ${notBlock}
   `;
 
-  const canRun = isRunnable(m);
   const sr = stepResults[m.id];
-  if (!sr) {
+  if (m.informational === true) {
     showJson({
-      message: canRun
-        ? "This step has not been run yet. Use Run all steps (or Reset, then Run all steps)."
-        : "This phase is filled in when you run “Agent starts checkout” (one agent process).",
+      message:
+        "This row is an overview only. It does not emit JSON from a run—read the explanation above.",
     });
+    return;
+  }
+
+  if (!sr) {
+    let message;
+    if (m.id === "demo-setup") {
+      message =
+        "This happens automatically when you click “Run all steps” (clears artifacts, starts the merchant server, then runs the agent).";
+    } else if (canRun) {
+      message =
+        "This step has not been run yet. Click “Run this step” below, or use “Run all steps” to reset, start the server, and run the agent.";
+    } else {
+      message =
+        "This phase is filled in when you run “Agent starts checkout” (one agent process), usually via “Run all steps”.";
+    }
+    showJson({ message });
     return;
   }
   if (sr.ok) {
@@ -109,15 +146,29 @@ function updateNav() {
 
 function setBusy(busy) {
   runAllBtn.disabled = busy;
-  resetBtn.disabled = busy;
+  if (runSelectedStepBtn) runSelectedStepBtn.disabled = busy;
 }
 
 async function runStep(id) {
   statusHint.textContent = `Running ${id}…`;
   setBusy(true);
   try {
-    const r = await fetch(`/api/step/${encodeURIComponent(id)}`, { method: "POST" });
-    const j = await r.json();
+    const r = await fetch(`/api/step/${encodeURIComponent(id)}`, {
+      method: "POST",
+      cache: "no-store",
+      headers: { Accept: "application/json" },
+    });
+    const raw = await r.text();
+    let j;
+    try {
+      j = raw ? JSON.parse(raw) : {};
+    } catch {
+      throw new Error(
+        r.status
+          ? `Bad response (${r.status}): ${raw.slice(0, 200)}`
+          : "Response was not JSON — is the demo dashboard running? Try: npm run demo:ui",
+      );
+    }
     if (!r.ok) {
       showJson(j);
       statusHint.textContent = j.error || "Error";
@@ -131,6 +182,10 @@ async function runStep(id) {
     await loadState();
     renderStepList();
     renderDetail();
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    statusHint.textContent = msg;
+    showJson({ error: msg });
   } finally {
     setBusy(false);
     updateNav();
@@ -138,11 +193,21 @@ async function runStep(id) {
 }
 
 runAllBtn.addEventListener("click", async () => {
-  statusHint.textContent = "Running reset → server → agent…";
+  statusHint.textContent = "Running full demo (setup + agent)…";
   setBusy(true);
   try {
-    const r = await fetch("/api/run-all", { method: "POST" });
-    const j = await r.json();
+    const r = await fetch("/api/run-all", {
+      method: "POST",
+      cache: "no-store",
+      headers: { Accept: "application/json" },
+    });
+    const raw = await r.text();
+    let j;
+    try {
+      j = raw ? JSON.parse(raw) : {};
+    } catch {
+      throw new Error("Run all failed: response was not JSON. Restart the dashboard (npm run demo:ui).");
+    }
     showJson(j);
     statusHint.textContent = j.ok ? "All steps finished." : j.error || "Error";
     await loadState();
@@ -150,12 +215,21 @@ runAllBtn.addEventListener("click", async () => {
     renderStepList();
     renderDetail();
     updateNav();
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    statusHint.textContent = msg;
+    showJson({ error: msg });
   } finally {
     setBusy(false);
   }
 });
 
-resetBtn.addEventListener("click", () => runStep("reset"));
+if (runSelectedStepBtn) {
+  runSelectedStepBtn.addEventListener("click", () => {
+    const m = meta[selectedIndex];
+    if (m && isRunnable(m)) runStep(m.id);
+  });
+}
 
 prevBtn.addEventListener("click", () => {
   selectedIndex = Math.max(0, selectedIndex - 1);

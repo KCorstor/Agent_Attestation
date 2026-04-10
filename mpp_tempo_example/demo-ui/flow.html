@@ -38,27 +38,35 @@
       .flow-mermaid-wrap {
         margin-top: 0.5rem;
         padding: 1.5rem 1.25rem 1.75rem;
-        min-height: min(52vh, 520px);
-        max-height: min(88vh, 920px);
-        overflow: auto;
-        -webkit-overflow-scrolling: touch;
+        width: 100%;
+        overflow: hidden;
         background: linear-gradient(165deg, #f0f4fa 0%, #eef2ff 55%, #f6f9fc 100%);
         border-radius: var(--radius);
         border: 1px solid var(--steps-panel-edge);
         box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
         text-align: center;
       }
+      .flow-diagram-scaler-outer {
+        overflow: hidden;
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+      }
+      .flow-diagram-scaler {
+        transform-origin: top center;
+        display: inline-block;
+      }
       .flow-mermaid-wrap .mermaid {
         display: inline-block;
         text-align: left;
-        min-width: min(960px, 100%);
+        margin: 0;
       }
-      /* Let the rendered diagram scale up; scroll the container when it exceeds bounds */
       .flow-mermaid-wrap svg {
-        min-width: 720px;
         width: auto !important;
         max-width: none;
         height: auto !important;
+        vertical-align: top;
       }
     </style>
   </head>
@@ -77,14 +85,16 @@
       <main class="layout layout--flow">
         <section class="panel panel--detail">
           <div class="flow-mermaid-wrap" role="region" aria-label="Checkout sequence diagram" tabindex="0">
-            <pre class="mermaid">sequenceDiagram
+            <div class="flow-diagram-scaler-outer">
+              <div class="flow-diagram-scaler">
+                <pre class="mermaid">sequenceDiagram
   participant B as Browser
   participant D as demo_dashboard.mjs
   participant M as "server.mjs (merchant)"
   participant A as agent.mjs
   participant F as "Disk (bundle + terms)"
   B->>D: Run all steps (HTTP)
-  D->>D: Reset, start server.mjs
+  D->>D: Run all steps (reset + server)
   D->>A: spawn agent (MPP_DEMO_EVENT)
   A->>M: GET /paid
   M-->>A: 402 + Payment challenge
@@ -96,6 +106,8 @@
   M-->>A: 200 paid
   A-->>D: stdout paid
   D-->>B: JSON response + UI refresh</pre>
+              </div>
+            </div>
           </div>
         </section>
       </main>
@@ -135,19 +147,60 @@
           noteBorderColor: "#e3e8ee",
           noteTextColor: "#425466",
           fontFamily: '"Plus Jakarta Sans", system-ui, -apple-system, sans-serif',
-          fontSize: "15px",
+          fontSize: "14px",
         },
         sequence: {
           useMaxWidth: false,
-          actorMargin: 56,
-          boxMargin: 12,
-          boxTextMargin: 6,
-          messageMargin: 38,
+          actorMargin: 48,
+          boxMargin: 11,
+          boxTextMargin: 5,
+          messageMargin: 32,
           mirrorActors: false,
           bottomMarginAdj: 16,
         },
       });
-      await mermaid.run({ querySelector: ".flow-mermaid-wrap .mermaid" });
+
+      function fitFlowDiagram() {
+        const wrap = document.querySelector(".flow-mermaid-wrap");
+        const outer = document.querySelector(".flow-diagram-scaler-outer");
+        const scaler = document.querySelector(".flow-diagram-scaler");
+        const svg = scaler?.querySelector("svg");
+        if (!wrap || !outer || !scaler || !svg) return;
+        scaler.style.transform = "scale(1)";
+        const r = svg.getBoundingClientRect();
+        const w = r.width || 1;
+        const h = r.height || 1;
+        const padX = 32;
+        const padY = 28;
+        const availW = Math.max(120, wrap.clientWidth - padX * 2);
+        const wrapRect = wrap.getBoundingClientRect();
+        const footer = document.querySelector(".page > .footer");
+        const fr = footer?.getBoundingClientRect();
+        const gap = 20;
+        const availH = Math.max(
+          160,
+          fr && fr.top < window.innerHeight
+            ? fr.top - wrapRect.top - gap
+            : window.innerHeight - wrapRect.top - gap
+        );
+        const innerH = availH - padY;
+        const s = Math.min(1, availW / w, innerH / h);
+        scaler.style.transform = `scale(${s})`;
+        outer.style.height = `${h * s}px`;
+      }
+
+      await mermaid.run({ querySelector: ".flow-diagram-scaler .mermaid" });
+      if (document.fonts?.ready) {
+        try {
+          await document.fonts.ready;
+        } catch {
+          /* ignore */
+        }
+      }
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => fitFlowDiagram());
+      });
+      window.addEventListener("resize", () => requestAnimationFrame(fitFlowDiagram));
     </script>
   </body>
 </html>

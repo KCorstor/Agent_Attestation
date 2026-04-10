@@ -1,21 +1,43 @@
 [
   {
-    "id": "reset",
-    "runnable": true,
-    "title": "Reset workspace",
-    "does": "Use before “Run all steps” or as the first manual step. This stops the demo child server (if this dashboard started it in previous runs) and deletes demo-ui-bundle.json and demo-ui-terms.json in mpp_tempo_example/. "
+    "id": "demo-setup",
+    "runnable": false,
+    "title": "Workspace + merchant server",
+    "does": "The demo is initialized and prior run artifacts are cleared. The mock merchant server is started and the merchant's 'paid' endpoint is probed to ensure it's live."
   },
   {
-    "id": "start-server",
-    "runnable": true,
-    "title": "Start demo MPP Merchant checkout server",
-    "does": "Runs a mock MPP Merchant. The /paid route is a normal HTTP GET: the first response is “payment required” (HTTP 402) and includes the payment challenge the client/agent must satisfy."
+    "id": "auction_gate",
+    "runnable": false,
+    "informational": true,
+    "title": "Auction gate (overview)",
+    "listDetail": "Concepts",
+    "detailLabel": "Overview",
+    "does": "auction_gate.mjs is part of this Attstr payment demo integration in this repository—it wires the MPP Tempo agent (agent.mjs) to mppx’s 402/onChallenge flow and the “wait for auction terms” step. It is not from the mppx package; it is source code shipped with this demo.\n\nIt exports createAuctionGate, which builds what you pass into Mppx.create in agent.mjs:\n• gate.fetch — wraps fetch and keeps the last 402 response so it can be merged with the parsed challenge.\n• gate.onChallenge — the function you hand to mppx as onChallenge: gate.onChallenge.\n\nWhen mppx gets a 402, it calls that onChallenge. Inside it we: build the payment bundle, run onBundle (log / optional bundle file), await waitForTerms (in this demo: poll the terms JSON file until it is OK), run onTerms, then return undefined so mppx does its normal job: sign, pay, and retry the GET.\n\nYou don't change mppx's own files. You write your own onChallenge function and hand it to Mppx.create when you build the client."
+  },
+  {
+    "id": "gate_wiring",
+    "runnable": false,
+    "informational": true,
+    "title": "Auction gate in the agent",
+    "listDetail": "Code snippets",
+    "detailLabel": "Wiring",
+    "does": "In agent.mjs you call createAuctionGate({ ... }) once. It returns gate.fetch and gate.onChallenge. You pass those into Mppx.create together with tempo.charge—that is the whole hook-up (see below). You do not edit files inside the mppx package.\n\nThe first snippet is the onChallenge implementation inside createAuctionGate. The second snippet is where the agent plugs gate.fetch and gate.onChallenge into Mppx.create.",
+    "snippets": [
+      {
+        "file": "auction_gate.mjs (inside createAuctionGate)",
+        "code": "async function onChallenge(challenge, _helpers) {\n  const bundle = buildPaymentBundle({\n    challenge,\n    capture402: getLast402(),\n  });\n\n  if (onBundle) await onBundle(bundle);\n\n  if (waitForTerms) {\n    const terms = await waitForTerms(bundle);\n    if (onTerms) await onTerms(bundle, terms);\n  }\n\n  return undefined;\n}\n\nreturn { fetch, getLast402, clearLast402, onChallenge };"
+      },
+      {
+        "file": "agent.mjs",
+        "code": "const mppx = Mppx.create({\n  polyfill: false,\n  fetch: gate.fetch,\n  methods: [tempo.charge({ account })],\n  onChallenge: gate.onChallenge,\n});"
+      }
+    ]
   },
   {
     "id": "agent_start",
     "runnable": true,
     "title": "Agent starts checkout",
-    "does": "The agent initiates and prints its setup (wallet, merchant URL, etc). It then issues a real mppx.fetch to the merchant. After the merchant's 402 response, the agent builds a bundle with the details of the transaction that it would send out to auction for lenders to bid on. In this demo it's just written to disk as a stand-in decision on the transaction."
+    "does": "The agent initiates and prints its setup (wallet, merchant URL, etc). It then issues a real mppx.fetch to the merchant.\n\nIn production, bundleOut and termsFile will be the real terms from the merchant, and the bid/funds from the issuing bank. For this demo they are just initialized here in lieu of actual terms and an actual auction."
   },
   {
     "id": "checkout_402",
